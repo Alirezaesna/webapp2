@@ -27,7 +27,9 @@ def currency_filter(value):
 def inject_globals():
     return {
         'datetime': datetime,
-        'current_year': datetime.now().year
+        'current_year': datetime.now().year,
+        'User': User,
+        'Loan': Loan
     }
 
 @app.route('/')
