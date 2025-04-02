@@ -128,10 +128,24 @@ class Installment(db.Model):
     
     @classmethod
     def delete(cls, installment_id):
+        # Make sure installment_id is treated as int
+        try:
+            installment_id = int(installment_id)
+        except (ValueError, TypeError):
+            print(f"Error: Could not convert installment_id to int: {installment_id}")
+            return False
+            
+        print(f"Looking for installment with ID: {installment_id}")
         installment = cls.query.get(installment_id)
+        
         if installment:
+            print(f"Found installment: {installment.id}, deleting...")
             db.session.delete(installment)
             db.session.commit()
+            return True
+        else:
+            print(f"No installment found with ID: {installment_id}")
+            return False
     
     @classmethod
     def delete_by_loan(cls, loan_id):

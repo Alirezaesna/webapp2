@@ -656,8 +656,17 @@ def admin_delete_installment(installment_id):
         flash('Installment not found.', 'danger')
         return redirect(url_for('admin_installments'))
     
-    Installment.delete(installment_id)
-    flash('Installment deleted successfully.', 'success')
+    # Try to delete the installment
+    print(f"Attempting to delete installment ID: {installment_id}")
+    
+    # Convert ID to str and then let the model convert it to int
+    result = Installment.delete(str(installment_id))
+    
+    if result:
+        flash('Installment deleted successfully.', 'success')
+    else:
+        flash('Error: Could not delete installment. Please try again.', 'danger')
+        
     return redirect(url_for('admin_installments'))
 
 @app.route('/apply-loan', methods=['GET', 'POST'])
