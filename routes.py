@@ -813,8 +813,8 @@ def reports():
     for loan in loans:
         if loan.status in ['approved', 'completed']:
             # Get month and year from created_at
-            date = datetime.fromisoformat(loan.created_at.split('T')[0])
-            month_year = date.strftime('%Y-%m')
+            # loan.created_at is already a datetime object, no need to parse
+            month_year = loan.created_at.strftime('%Y-%m')
             
             if month_year not in monthly_data:
                 monthly_data[month_year] = {
