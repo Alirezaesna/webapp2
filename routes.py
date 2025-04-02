@@ -23,6 +23,17 @@ def load_user(user_id):
 def currency_filter(value):
     return format_currency(value)
 
+@app.template_filter('format_date')
+def format_date_filter(value, format='%Y-%m-%d'):
+    if value is None:
+        return ''
+    if isinstance(value, str):
+        try:
+            value = datetime.fromisoformat(value)
+        except (ValueError, TypeError):
+            return value
+    return value.strftime(format)
+
 @app.context_processor
 def inject_globals():
     return {

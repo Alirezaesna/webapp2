@@ -75,7 +75,7 @@
                 </div>
                 <div class="row mb-3">
                     <div class="col-sm-4 text-muted">Created:</div>
-                    <div class="col-sm-8">{{ datetime.fromisoformat(loan.created_at).strftime('%Y-%m-%d %H:%M') }}</div>
+                    <div class="col-sm-8">{{ loan.created_at.strftime('%Y-%m-%d %H:%M') }}</div>
                 </div>
                 
                 {% if loan.status == 'approved' or loan.status == 'completed' %}
@@ -85,7 +85,7 @@
                     </div>
                     <div class="row mb-3">
                         <div class="col-sm-4 text-muted">Approved At:</div>
-                        <div class="col-sm-8">{{ datetime.fromisoformat(loan.approved_at).strftime('%Y-%m-%d %H:%M') if loan.approved_at else 'N/A' }}</div>
+                        <div class="col-sm-8">{{ loan.approved_at.strftime('%Y-%m-%d %H:%M') if loan.approved_at else 'N/A' }}</div>
                     </div>
                 {% endif %}
                 

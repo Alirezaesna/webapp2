@@ -110,7 +110,7 @@
                                     <td>{{ loan_data.loan.amount|currency }}</td>
                                     <td>{{ loan_data.loan.duration }} months</td>
                                     <td>{{ loan_data.loan.purpose|truncate(50) }}</td>
-                                    <td>{{ datetime.fromisoformat(loan_data.loan.created_at).strftime('%Y-%m-%d') }}</td>
+                                    <td>{{ loan_data.loan.created_at.strftime('%Y-%m-%d') }}</td>
                                     <td>
                                         <a href="{{ url_for('view_loan', loan_id=loan_data.loan.id) }}" class="btn btn-sm btn-outline-primary">Details</a>
                                     </td>
@@ -156,7 +156,7 @@
                                 <tr>
                                     <td>{{ loan_data.loan.amount|currency }}</td>
                                     <td>{{ loan_data.loan.duration }} months</td>
-                                    <td>{{ datetime.fromisoformat(loan_data.loan.created_at).strftime('%Y-%m-%d') }}</td>
+                                    <td>{{ loan_data.loan.created_at.strftime('%Y-%m-%d') }}</td>
                                     <td>{{ datetime.fromisoformat(loan_data.loan.approved_at).strftime('%Y-%m-%d') if loan_data.loan.approved_at else 'N/A' }}</td>
                                     <td>
                                         <a href="{{ url_for('view_loan', loan_id=loan_data.loan.id) }}" class="btn btn-sm btn-outline-primary">Details</a>
@@ -204,7 +204,7 @@
                                     <td>{{ loan_data.loan.amount|currency }}</td>
                                     <td>{{ loan_data.loan.duration }} months</td>
                                     <td>{{ loan_data.loan.purpose|truncate(50) }}</td>
-                                    <td>{{ datetime.fromisoformat(loan_data.loan.created_at).strftime('%Y-%m-%d') }}</td>
+                                    <td>{{ loan_data.loan.created_at.strftime('%Y-%m-%d') }}</td>
                                     <td>
                                         <a href="{{ url_for('view_loan', loan_id=loan_data.loan.id) }}" class="btn btn-sm btn-outline-primary">Details</a>
                                     </td>

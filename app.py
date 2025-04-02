@@ -4,6 +4,7 @@ from flask import Flask
 from flask_login import LoginManager
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.orm import DeclarativeBase
+from flask_wtf.csrf import CSRFProtect
 
 # Configure logging
 logging.basicConfig(level=logging.DEBUG)
@@ -11,6 +12,9 @@ logging.basicConfig(level=logging.DEBUG)
 # Initialize Flask app
 app = Flask(__name__)
 app.secret_key = os.environ.get("SESSION_SECRET", "dev-secret-key")
+
+# Initialize CSRF protection
+csrf = CSRFProtect(app)
 
 # Configure the database
 class Base(DeclarativeBase):

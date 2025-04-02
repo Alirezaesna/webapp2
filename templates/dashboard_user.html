@@ -220,7 +220,7 @@
                                             {% elif loan.status == 'completed' %}
                                                 <span class="badge bg-info">Completed</span>
                                             {% endif %}
-                                            • Applied on: {{ datetime.fromisoformat(loan.created_at).strftime('%Y-%m-%d') }}
+                                            • Applied on: {{ loan.created_at|format_date }}
                                         </p>
                                     </div>
                                     <a href="{{ url_for('view_loan', loan_id=loan.id) }}" class="btn btn-sm btn-outline-primary">

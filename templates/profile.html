@@ -64,7 +64,7 @@
                 </div>
                 <div class="mb-0">
                     <label class="small text-muted">Account Created</label>
-                    <p class="mb-0">{{ datetime.fromisoformat(current_user.created_at).strftime('%Y-%m-%d') }}</p>
+                    <p class="mb-0">{{ current_user.created_at.strftime('%Y-%m-%d') }}</p>
                 </div>
             </div>
         </div>

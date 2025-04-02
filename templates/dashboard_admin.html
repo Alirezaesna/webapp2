@@ -124,7 +124,7 @@
                                                 <span class="badge bg-info">Completed</span>
                                             {% endif %}
                                         </small>
-                                        <small class="text-muted">Applied: {{ datetime.fromisoformat(loan.created_at).strftime('%Y-%m-%d') }}</small>
+                                        <small class="text-muted">Applied: {{ loan.created_at|format_date }}</small>
                                     </div>
                                     <a href="{{ url_for('admin_view_loan', loan_id=loan.id) }}" class="btn btn-sm btn-outline-primary">
                                         <i class="fas fa-eye"></i>
