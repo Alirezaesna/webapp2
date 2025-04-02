@@ -37,3 +37,8 @@ from routes import *
 # Create database tables
 with app.app_context():
     db.create_all()
+    
+    # Import this after db is initialized to avoid circular imports
+    from utils import create_admin_if_not_exists
+    # Create admin user if it doesn't exist
+    create_admin_if_not_exists()
