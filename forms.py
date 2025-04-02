@@ -4,98 +4,98 @@ from wtforms.validators import DataRequired, Email, EqualTo, Length, ValidationE
 from models import User
 
 class LoginForm(FlaskForm):
-    username = StringField('Username', validators=[DataRequired()])
-    password = PasswordField('Password', validators=[DataRequired()])
-    remember_me = BooleanField('Remember Me')
-    submit = SubmitField('Login')
+    username = StringField('نام کاربری', validators=[DataRequired()])
+    password = PasswordField('رمز عبور', validators=[DataRequired()])
+    remember_me = BooleanField('مرا به خاطر بسپار')
+    submit = SubmitField('ورود')
 
 class RegisterForm(FlaskForm):
-    username = StringField('Username', validators=[DataRequired(), Length(min=3, max=20)])
-    email = StringField('Email', validators=[DataRequired(), Email()])
-    password = PasswordField('Password', validators=[DataRequired(), Length(min=6)])
-    confirm_password = PasswordField('Confirm Password', validators=[DataRequired(), EqualTo('password')])
-    first_name = StringField('First Name', validators=[DataRequired()])
-    last_name = StringField('Last Name', validators=[DataRequired()])
-    phone = StringField('Phone Number', validators=[DataRequired()])
-    address = TextAreaField('Address', validators=[DataRequired()])
-    submit = SubmitField('Register')
+    username = StringField('نام کاربری', validators=[DataRequired(), Length(min=3, max=20)])
+    email = StringField('ایمیل', validators=[DataRequired(), Email()])
+    password = PasswordField('رمز عبور', validators=[DataRequired(), Length(min=6)])
+    confirm_password = PasswordField('تکرار رمز عبور', validators=[DataRequired(), EqualTo('password')])
+    first_name = StringField('نام', validators=[DataRequired()])
+    last_name = StringField('نام خانوادگی', validators=[DataRequired()])
+    phone = StringField('شماره تلفن', validators=[DataRequired()])
+    address = TextAreaField('آدرس', validators=[DataRequired()])
+    submit = SubmitField('ثبت نام')
     
     def validate_username(self, username):
         user = User.get_by_username(username.data)
         if user is not None:
-            raise ValidationError('Username already taken. Please choose a different one.')
+            raise ValidationError('این نام کاربری قبلا استفاده شده است. لطفا از نام دیگری استفاده کنید.')
     
     def validate_email(self, email):
         user = User.get_by_email(email.data)
         if user is not None:
-            raise ValidationError('Email already registered. Please use a different one.')
+            raise ValidationError('این ایمیل قبلا ثبت شده است. لطفا از ایمیل دیگری استفاده کنید.')
 
 class EditProfileForm(FlaskForm):
-    email = StringField('Email', validators=[DataRequired(), Email()])
-    first_name = StringField('First Name', validators=[DataRequired()])
-    last_name = StringField('Last Name', validators=[DataRequired()])
-    phone = StringField('Phone Number', validators=[DataRequired()])
-    address = TextAreaField('Address', validators=[DataRequired()])
-    submit = SubmitField('Update Profile')
+    email = StringField('ایمیل', validators=[DataRequired(), Email()])
+    first_name = StringField('نام', validators=[DataRequired()])
+    last_name = StringField('نام خانوادگی', validators=[DataRequired()])
+    phone = StringField('شماره تلفن', validators=[DataRequired()])
+    address = TextAreaField('آدرس', validators=[DataRequired()])
+    submit = SubmitField('بروزرسانی پروفایل')
 
 class ChangePasswordForm(FlaskForm):
-    current_password = PasswordField('Current Password', validators=[DataRequired()])
-    new_password = PasswordField('New Password', validators=[DataRequired(), Length(min=6)])
-    confirm_password = PasswordField('Confirm New Password', validators=[DataRequired(), EqualTo('new_password')])
-    submit = SubmitField('Change Password')
+    current_password = PasswordField('رمز عبور فعلی', validators=[DataRequired()])
+    new_password = PasswordField('رمز عبور جدید', validators=[DataRequired(), Length(min=6)])
+    confirm_password = PasswordField('تکرار رمز عبور جدید', validators=[DataRequired(), EqualTo('new_password')])
+    submit = SubmitField('تغییر رمز عبور')
 
 class UserForm(FlaskForm):
-    username = StringField('Username', validators=[DataRequired(), Length(min=3, max=20)])
-    email = StringField('Email', validators=[DataRequired(), Email()])
-    password = PasswordField('Password', validators=[Optional(), Length(min=6)])
-    first_name = StringField('First Name', validators=[DataRequired()])
-    last_name = StringField('Last Name', validators=[DataRequired()])
-    phone = StringField('Phone Number', validators=[DataRequired()])
-    address = TextAreaField('Address', validators=[DataRequired()])
-    is_admin = BooleanField('Admin User')
-    submit = SubmitField('Save User')
+    username = StringField('نام کاربری', validators=[DataRequired(), Length(min=3, max=20)])
+    email = StringField('ایمیل', validators=[DataRequired(), Email()])
+    password = PasswordField('رمز عبور', validators=[Optional(), Length(min=6)])
+    first_name = StringField('نام', validators=[DataRequired()])
+    last_name = StringField('نام خانوادگی', validators=[DataRequired()])
+    phone = StringField('شماره تلفن', validators=[DataRequired()])
+    address = TextAreaField('آدرس', validators=[DataRequired()])
+    is_admin = BooleanField('کاربر مدیر')
+    submit = SubmitField('ذخیره کاربر')
 
 class LoanApplicationForm(FlaskForm):
-    amount = FloatField('Loan Amount', validators=[DataRequired(), NumberRange(min=0.01)])
-    duration = IntegerField('Duration (months)', validators=[DataRequired(), NumberRange(min=1, max=120)])
-    purpose = TextAreaField('Purpose of Loan', validators=[DataRequired(), Length(min=10)])
-    submit = SubmitField('Apply for Loan')
+    amount = FloatField('مبلغ وام', validators=[DataRequired(), NumberRange(min=0.01)])
+    duration = IntegerField('مدت زمان (ماه)', validators=[DataRequired(), NumberRange(min=1, max=120)])
+    purpose = TextAreaField('هدف از دریافت وام', validators=[DataRequired(), Length(min=10)])
+    submit = SubmitField('ثبت درخواست وام')
 
 class LoanForm(FlaskForm):
-    user_id = SelectField('User', coerce=str, validators=[DataRequired()])
-    amount = FloatField('Loan Amount', validators=[DataRequired(), NumberRange(min=0.01)])
-    duration = IntegerField('Duration (months)', validators=[DataRequired(), NumberRange(min=1, max=120)])
-    purpose = TextAreaField('Purpose of Loan', validators=[DataRequired(), Length(min=10)])
-    status = SelectField('Status', choices=[
-        ('pending', 'Pending'),
-        ('approved', 'Approved'),
-        ('rejected', 'Rejected'),
-        ('completed', 'Completed')
+    user_id = SelectField('کاربر', coerce=str, validators=[DataRequired()])
+    amount = FloatField('مبلغ وام', validators=[DataRequired(), NumberRange(min=0.01)])
+    duration = IntegerField('مدت زمان (ماه)', validators=[DataRequired(), NumberRange(min=1, max=120)])
+    purpose = TextAreaField('هدف از دریافت وام', validators=[DataRequired(), Length(min=10)])
+    status = SelectField('وضعیت', choices=[
+        ('pending', 'در انتظار'),
+        ('approved', 'تایید شده'),
+        ('rejected', 'رد شده'),
+        ('completed', 'تکمیل شده')
     ], validators=[DataRequired()])
-    submit = SubmitField('Save Loan')
+    submit = SubmitField('ذخیره وام')
 
 class InstallmentForm(FlaskForm):
-    loan_id = SelectField('Loan', coerce=str, validators=[DataRequired()])
-    amount = FloatField('Installment Amount', validators=[DataRequired(), NumberRange(min=0.01)])
-    due_date = DateField('Due Date', format='%Y-%m-%d', validators=[DataRequired()])
-    paid = BooleanField('Paid')
-    paid_date = DateField('Payment Date', format='%Y-%m-%d', validators=[Optional()])
-    submit = SubmitField('Save Installment')
+    loan_id = SelectField('وام', coerce=str, validators=[DataRequired()])
+    amount = FloatField('مبلغ قسط', validators=[DataRequired(), NumberRange(min=0.01)])
+    due_date = DateField('تاریخ سررسید', format='%Y-%m-%d', validators=[DataRequired()])
+    paid = BooleanField('پرداخت شده')
+    paid_date = DateField('تاریخ پرداخت', format='%Y-%m-%d', validators=[Optional()])
+    submit = SubmitField('ذخیره قسط')
 
 class LoanActionForm(FlaskForm):
-    loan_id = HiddenField('Loan ID', validators=[DataRequired()])
-    action = HiddenField('Action', validators=[DataRequired()])
-    submit = SubmitField('Confirm')
+    loan_id = HiddenField('شناسه وام', validators=[DataRequired()])
+    action = HiddenField('عملیات', validators=[DataRequired()])
+    submit = SubmitField('تایید')
 
 class InstallmentPaymentForm(FlaskForm):
-    installment_id = HiddenField('Installment ID', validators=[DataRequired()])
-    submit = SubmitField('Mark as Paid')
+    installment_id = HiddenField('شناسه قسط', validators=[DataRequired()])
+    submit = SubmitField('علامت‌گذاری به عنوان پرداخت شده')
 
 class InstallmentFilterForm(FlaskForm):
-    status = SelectField('Status', choices=[
-        ('all', 'All Installments'),
-        ('paid', 'Paid Installments'),
-        ('unpaid', 'Unpaid Installments'),
-        ('overdue', 'Overdue Installments')
+    status = SelectField('وضعیت', choices=[
+        ('all', 'همه اقساط'),
+        ('paid', 'اقساط پرداخت شده'),
+        ('unpaid', 'اقساط پرداخت نشده'),
+        ('overdue', 'اقساط معوق')
     ])
-    submit = SubmitField('Filter')
+    submit = SubmitField('فیلتر')

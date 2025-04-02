@@ -1,13 +1,13 @@
 {% extends "layout.html" %}
 
-{% block title %}- Login{% endblock %}
+{% block title %}- ورود{% endblock %}
 
 {% block content %}
 <div class="row justify-content-center">
     <div class="col-md-6 col-lg-5">
         <div class="card border-0 shadow-sm">
             <div class="card-header bg-primary text-white">
-                <h4 class="mb-0"><i class="fas fa-sign-in-alt me-2"></i> Login</h4>
+                <h4 class="mb-0"><i class="fas fa-sign-in-alt me-2"></i> ورود به سیستم</h4>
             </div>
             <div class="card-body p-4">
                 <form method="post" action="{{ url_for('login') }}">
@@ -23,7 +23,7 @@
                                 {% endfor %}
                             </div>
                         {% else %}
-                            {{ form.username(class="form-control", placeholder="Enter your username") }}
+                            {{ form.username(class="form-control", placeholder="نام کاربری خود را وارد کنید") }}
                         {% endif %}
                     </div>
                     
@@ -37,7 +37,7 @@
                                 {% endfor %}
                             </div>
                         {% else %}
-                            {{ form.password(class="form-control", placeholder="Enter your password") }}
+                            {{ form.password(class="form-control", placeholder="رمز عبور خود را وارد کنید") }}
                         {% endif %}
                     </div>
                     
@@ -53,8 +53,8 @@
             </div>
             <div class="card-footer bg-transparent text-center">
                 <p class="mb-0">
-                    Don't have an account? 
-                    <a href="{{ url_for('register') }}">Register</a>
+                    حساب کاربری ندارید؟ 
+                    <a href="{{ url_for('register') }}">ثبت نام</a>
                 </p>
             </div>
         </div>

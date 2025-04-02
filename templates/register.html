@@ -1,13 +1,13 @@
 {% extends "layout.html" %}
 
-{% block title %}- Register{% endblock %}
+{% block title %}- ثبت نام{% endblock %}
 
 {% block content %}
 <div class="row justify-content-center">
     <div class="col-md-8 col-lg-6">
         <div class="card border-0 shadow-sm">
             <div class="card-header bg-primary text-white">
-                <h4 class="mb-0"><i class="fas fa-user-plus me-2"></i> Register</h4>
+                <h4 class="mb-0"><i class="fas fa-user-plus me-2"></i> ثبت نام</h4>
             </div>
             <div class="card-body p-4">
                 <form method="post" action="{{ url_for('register') }}">
@@ -24,7 +24,7 @@
                                     {% endfor %}
                                 </div>
                             {% else %}
-                                {{ form.first_name(class="form-control", placeholder="Enter your first name") }}
+                                {{ form.first_name(class="form-control", placeholder="نام خود را وارد کنید") }}
                             {% endif %}
                         </div>
                         
@@ -38,7 +38,7 @@
                                     {% endfor %}
                                 </div>
                             {% else %}
-                                {{ form.last_name(class="form-control", placeholder="Enter your last name") }}
+                                {{ form.last_name(class="form-control", placeholder="نام خانوادگی خود را وارد کنید") }}
                             {% endif %}
                         </div>
                     </div>
@@ -53,7 +53,7 @@
                                 {% endfor %}
                             </div>
                         {% else %}
-                            {{ form.username(class="form-control", placeholder="Choose a username") }}
+                            {{ form.username(class="form-control", placeholder="یک نام کاربری انتخاب کنید") }}
                         {% endif %}
                     </div>
                     
@@ -67,7 +67,7 @@
                                 {% endfor %}
                             </div>
                         {% else %}
-                            {{ form.email(class="form-control", placeholder="Enter your email address") }}
+                            {{ form.email(class="form-control", placeholder="آدرس ایمیل خود را وارد کنید") }}
                         {% endif %}
                     </div>
                     
@@ -81,7 +81,7 @@
                                 {% endfor %}
                             </div>
                         {% else %}
-                            {{ form.phone(class="form-control", placeholder="Enter your phone number") }}
+                            {{ form.phone(class="form-control", placeholder="شماره تلفن خود را وارد کنید") }}
                         {% endif %}
                     </div>
                     
@@ -95,7 +95,7 @@
                                 {% endfor %}
                             </div>
                         {% else %}
-                            {{ form.address(class="form-control", rows=3, placeholder="Enter your address") }}
+                            {{ form.address(class="form-control", rows=3, placeholder="آدرس خود را وارد کنید") }}
                         {% endif %}
                     </div>
                     
@@ -109,9 +109,9 @@
                                 {% endfor %}
                             </div>
                         {% else %}
-                            {{ form.password(class="form-control", placeholder="Choose a password") }}
+                            {{ form.password(class="form-control", placeholder="یک رمز عبور انتخاب کنید") }}
                         {% endif %}
-                        <div class="form-text">Password must be at least 6 characters long.</div>
+                        <div class="form-text">رمز عبور باید حداقل 6 کاراکتر باشد.</div>
                     </div>
                     
                     <div class="mb-3">
@@ -124,7 +124,7 @@
                                 {% endfor %}
                             </div>
                         {% else %}
-                            {{ form.confirm_password(class="form-control", placeholder="Confirm your password") }}
+                            {{ form.confirm_password(class="form-control", placeholder="رمز عبور خود را تکرار کنید") }}
                         {% endif %}
                     </div>
                     
@@ -135,8 +135,8 @@
             </div>
             <div class="card-footer bg-transparent text-center">
                 <p class="mb-0">
-                    Already have an account? 
-                    <a href="{{ url_for('login') }}">Login</a>
+                    قبلا ثبت نام کرده‌اید؟ 
+                    <a href="{{ url_for('login') }}">ورود</a>
                 </p>
             </div>
         </div>
