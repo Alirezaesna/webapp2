@@ -1,1 +1,24 @@
-[]
+[
+    {
+        "id": 1,
+        "user_id": 2,
+        "amount": 10000000.0,
+        "duration": 12,
+        "purpose": "وام خرید لوازم نوزاد",
+        "status": "approved",
+        "approved_by": 1,
+        "approved_at": "2025-04-02T15:22:55.910902",
+        "created_at": "2025-04-02T15:15:52.402467"
+    },
+    {
+        "id": 2,
+        "user_id": 2,
+        "amount": 10000000.0,
+        "duration": 5,
+        "purpose": "عوهوک و خرید چوهوک",
+        "status": "approved",
+        "approved_by": 1,
+        "approved_at": "2025-04-02T15:47:08.112957",
+        "created_at": "2025-04-02T15:47:08.115341"
+    }
+]
