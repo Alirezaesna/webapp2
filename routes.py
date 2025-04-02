@@ -12,8 +12,8 @@ from forms import (LoginForm, RegisterForm, EditProfileForm, ChangePasswordForm,
 from utils import (create_admin_if_not_exists, format_currency, create_loan_installments,
                   get_loan_progress, get_user_loan_statistics, get_system_statistics)
 
-# Create admin user if not exists
-create_admin_if_not_exists()
+# Admin user will be created when the application starts
+# (moved to main.py)
 
 @login_manager.user_loader
 def load_user(user_id):

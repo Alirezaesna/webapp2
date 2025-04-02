@@ -1,22 +1,28 @@
-import json
-import os
 from datetime import datetime
 from flask_login import UserMixin
 from werkzeug.security import generate_password_hash, check_password_hash
+from app import db
 
-class User(UserMixin):
-    def __init__(self, id=None, username=None, email=None, password=None, first_name=None, 
-                 last_name=None, phone=None, address=None, is_admin=False, created_at=None):
-        self.id = id
-        self.username = username
-        self.email = email
-        self.password_hash = password
-        self.first_name = first_name
-        self.last_name = last_name
-        self.phone = phone
-        self.address = address
-        self.is_admin = is_admin
-        self.created_at = created_at or datetime.now().isoformat()
+class User(UserMixin, db.Model):
+    __tablename__ = 'users'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    username = db.Column(db.String(64), unique=True, nullable=False)
+    email = db.Column(db.String(120), unique=True, nullable=False)
+    password_hash = db.Column(db.String(256), nullable=False)
+    first_name = db.Column(db.String(64), nullable=False)
+    last_name = db.Column(db.String(64), nullable=False)
+    phone = db.Column(db.String(20), nullable=False)
+    address = db.Column(db.Text, nullable=False)
+    is_admin = db.Column(db.Boolean, default=False)
+    created_at = db.Column(db.DateTime, default=datetime.now)
+    
+    # Relationships
+    loans = db.relationship('Loan', 
+                           foreign_keys='Loan.user_id', 
+                           backref='user', 
+                           lazy='dynamic', 
+                           cascade="all, delete-orphan")
     
     def set_password(self, password):
         self.password_hash = generate_password_hash(password)
@@ -24,300 +30,110 @@ class User(UserMixin):
     def check_password(self, password):
         return check_password_hash(self.password_hash, password)
     
-    def to_dict(self):
-        return {
-            'id': self.id,
-            'username': self.username,
-            'email': self.email,
-            'password_hash': self.password_hash,
-            'first_name': self.first_name,
-            'last_name': self.last_name,
-            'phone': self.phone,
-            'address': self.address,
-            'is_admin': self.is_admin,
-            'created_at': self.created_at
-        }
-    
-    @classmethod
-    def from_dict(cls, data):
-        return cls(
-            id=data.get('id'),
-            username=data.get('username'),
-            email=data.get('email'),
-            password=data.get('password_hash'),
-            first_name=data.get('first_name'),
-            last_name=data.get('last_name'),
-            phone=data.get('phone'),
-            address=data.get('address'),
-            is_admin=data.get('is_admin', False),
-            created_at=data.get('created_at')
-        )
-
     @classmethod
     def get_all(cls):
-        users = []
-        try:
-            with open('data/users.json', 'r') as f:
-                users_data = json.load(f)
-                for user_data in users_data:
-                    users.append(cls.from_dict(user_data))
-        except (FileNotFoundError, json.JSONDecodeError):
-            # Return empty list if file doesn't exist or is invalid
-            pass
-        return users
+        return cls.query.all()
     
     @classmethod
     def get_by_id(cls, user_id):
-        users = cls.get_all()
-        for user in users:
-            if str(user.id) == str(user_id):
-                return user
-        return None
+        return cls.query.get(user_id)
     
     @classmethod
     def get_by_username(cls, username):
-        users = cls.get_all()
-        for user in users:
-            if user.username == username:
-                return user
-        return None
+        return cls.query.filter_by(username=username).first()
     
     @classmethod
     def get_by_email(cls, email):
-        users = cls.get_all()
-        for user in users:
-            if user.email == email:
-                return user
-        return None
+        return cls.query.filter_by(email=email).first()
     
     def save(self):
-        users = self.get_all()
-        
-        # If this is a new user, generate a new ID
-        if self.id is None:
-            max_id = 0
-            for user in users:
-                if user.id and int(user.id) > max_id:
-                    max_id = int(user.id)
-            self.id = str(max_id + 1)
-            users.append(self)
-        else:
-            # Update existing user
-            for i, user in enumerate(users):
-                if str(user.id) == str(self.id):
-                    users[i] = self
-                    break
-        
-        # Save to file
-        with open('data/users.json', 'w') as f:
-            json.dump([user.to_dict() for user in users], f, indent=4)
+        db.session.add(self)
+        db.session.commit()
     
     @classmethod
     def delete(cls, user_id):
-        users = cls.get_all()
-        users = [user for user in users if str(user.id) != str(user_id)]
-        
-        # Save to file
-        with open('data/users.json', 'w') as f:
-            json.dump([user.to_dict() for user in users], f, indent=4)
+        user = cls.query.get(user_id)
+        if user:
+            db.session.delete(user)
+            db.session.commit()
 
 
-class Loan:
-    def __init__(self, id=None, user_id=None, amount=None, duration=None, purpose=None, 
-                 status="pending", approved_by=None, approved_at=None, created_at=None):
-        self.id = id
-        self.user_id = user_id
-        self.amount = amount
-        self.duration = duration  # in months
-        self.purpose = purpose
-        self.status = status  # pending, approved, rejected, completed
-        self.approved_by = approved_by
-        self.approved_at = approved_at
-        self.created_at = created_at or datetime.now().isoformat()
+class Loan(db.Model):
+    __tablename__ = 'loans'
     
-    def to_dict(self):
-        return {
-            'id': self.id,
-            'user_id': self.user_id,
-            'amount': self.amount,
-            'duration': self.duration,
-            'purpose': self.purpose,
-            'status': self.status,
-            'approved_by': self.approved_by,
-            'approved_at': self.approved_at,
-            'created_at': self.created_at
-        }
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    amount = db.Column(db.Float, nullable=False)
+    duration = db.Column(db.Integer, nullable=False)  # in months
+    purpose = db.Column(db.Text, nullable=False)
+    status = db.Column(db.String(20), default='pending')  # pending, approved, rejected, completed
+    approved_by = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
+    approved_at = db.Column(db.DateTime, nullable=True)
+    created_at = db.Column(db.DateTime, default=datetime.now)
     
-    @classmethod
-    def from_dict(cls, data):
-        return cls(
-            id=data.get('id'),
-            user_id=data.get('user_id'),
-            amount=data.get('amount'),
-            duration=data.get('duration'),
-            purpose=data.get('purpose'),
-            status=data.get('status', 'pending'),
-            approved_by=data.get('approved_by'),
-            approved_at=data.get('approved_at'),
-            created_at=data.get('created_at')
-        )
-
+    # Relationships
+    installments = db.relationship('Installment', backref='loan', lazy='dynamic', cascade="all, delete-orphan")
+    approver = db.relationship('User', foreign_keys=[approved_by], backref='approved_loans', lazy=True)
+    
     @classmethod
     def get_all(cls):
-        loans = []
-        try:
-            with open('data/loans.json', 'r') as f:
-                loans_data = json.load(f)
-                for loan_data in loans_data:
-                    loans.append(cls.from_dict(loan_data))
-        except (FileNotFoundError, json.JSONDecodeError):
-            # Return empty list if file doesn't exist or is invalid
-            pass
-        return loans
+        return cls.query.all()
     
     @classmethod
     def get_by_id(cls, loan_id):
-        loans = cls.get_all()
-        for loan in loans:
-            if str(loan.id) == str(loan_id):
-                return loan
-        return None
+        return cls.query.get(loan_id)
     
     @classmethod
     def get_by_user(cls, user_id):
-        loans = cls.get_all()
-        user_loans = [loan for loan in loans if str(loan.user_id) == str(user_id)]
-        return user_loans
+        return cls.query.filter_by(user_id=user_id).all()
     
     def save(self):
-        loans = self.get_all()
-        
-        # If this is a new loan, generate a new ID
-        if self.id is None:
-            max_id = 0
-            for loan in loans:
-                if loan.id and int(loan.id) > max_id:
-                    max_id = int(loan.id)
-            self.id = str(max_id + 1)
-            loans.append(self)
-        else:
-            # Update existing loan
-            for i, loan in enumerate(loans):
-                if str(loan.id) == str(self.id):
-                    loans[i] = self
-                    break
-        
-        # Save to file
-        with open('data/loans.json', 'w') as f:
-            json.dump([loan.to_dict() for loan in loans], f, indent=4)
+        db.session.add(self)
+        db.session.commit()
     
     @classmethod
     def delete(cls, loan_id):
-        loans = cls.get_all()
-        loans = [loan for loan in loans if str(loan.id) != str(loan_id)]
-        
-        # Save to file
-        with open('data/loans.json', 'w') as f:
-            json.dump([loan.to_dict() for loan in loans], f, indent=4)
+        loan = cls.query.get(loan_id)
+        if loan:
+            db.session.delete(loan)
+            db.session.commit()
 
 
-class Installment:
-    def __init__(self, id=None, loan_id=None, amount=None, due_date=None, 
-                 paid=False, paid_date=None, created_at=None):
-        self.id = id
-        self.loan_id = loan_id
-        self.amount = amount
-        self.due_date = due_date
-        self.paid = paid
-        self.paid_date = paid_date
-        self.created_at = created_at or datetime.now().isoformat()
+class Installment(db.Model):
+    __tablename__ = 'installments'
     
-    def to_dict(self):
-        return {
-            'id': self.id,
-            'loan_id': self.loan_id,
-            'amount': self.amount,
-            'due_date': self.due_date,
-            'paid': self.paid,
-            'paid_date': self.paid_date,
-            'created_at': self.created_at
-        }
+    id = db.Column(db.Integer, primary_key=True)
+    loan_id = db.Column(db.Integer, db.ForeignKey('loans.id'), nullable=False)
+    amount = db.Column(db.Float, nullable=False)
+    due_date = db.Column(db.Date, nullable=False)
+    paid = db.Column(db.Boolean, default=False)
+    paid_date = db.Column(db.Date, nullable=True)
+    created_at = db.Column(db.DateTime, default=datetime.now)
     
-    @classmethod
-    def from_dict(cls, data):
-        return cls(
-            id=data.get('id'),
-            loan_id=data.get('loan_id'),
-            amount=data.get('amount'),
-            due_date=data.get('due_date'),
-            paid=data.get('paid', False),
-            paid_date=data.get('paid_date'),
-            created_at=data.get('created_at')
-        )
-
     @classmethod
     def get_all(cls):
-        installments = []
-        try:
-            with open('data/installments.json', 'r') as f:
-                installments_data = json.load(f)
-                for installment_data in installments_data:
-                    installments.append(cls.from_dict(installment_data))
-        except (FileNotFoundError, json.JSONDecodeError):
-            # Return empty list if file doesn't exist or is invalid
-            pass
-        return installments
+        return cls.query.all()
     
     @classmethod
     def get_by_id(cls, installment_id):
-        installments = cls.get_all()
-        for installment in installments:
-            if str(installment.id) == str(installment_id):
-                return installment
-        return None
+        return cls.query.get(installment_id)
     
     @classmethod
     def get_by_loan(cls, loan_id):
-        installments = cls.get_all()
-        loan_installments = [inst for inst in installments if str(inst.loan_id) == str(loan_id)]
-        return loan_installments
+        return cls.query.filter_by(loan_id=loan_id).all()
     
     def save(self):
-        installments = self.get_all()
-        
-        # If this is a new installment, generate a new ID
-        if self.id is None:
-            max_id = 0
-            for installment in installments:
-                if installment.id and int(installment.id) > max_id:
-                    max_id = int(installment.id)
-            self.id = str(max_id + 1)
-            installments.append(self)
-        else:
-            # Update existing installment
-            for i, installment in enumerate(installments):
-                if str(installment.id) == str(self.id):
-                    installments[i] = self
-                    break
-        
-        # Save to file
-        with open('data/installments.json', 'w') as f:
-            json.dump([installment.to_dict() for installment in installments], f, indent=4)
+        db.session.add(self)
+        db.session.commit()
     
     @classmethod
     def delete(cls, installment_id):
-        installments = cls.get_all()
-        installments = [inst for inst in installments if str(inst.id) != str(installment_id)]
-        
-        # Save to file
-        with open('data/installments.json', 'w') as f:
-            json.dump([installment.to_dict() for installment in installments], f, indent=4)
+        installment = cls.query.get(installment_id)
+        if installment:
+            db.session.delete(installment)
+            db.session.commit()
     
     @classmethod
     def delete_by_loan(cls, loan_id):
-        installments = cls.get_all()
-        installments = [inst for inst in installments if str(inst.loan_id) != str(loan_id)]
-        
-        # Save to file
-        with open('data/installments.json', 'w') as f:
-            json.dump([installment.to_dict() for installment in installments], f, indent=4)
+        cls.query.filter_by(loan_id=loan_id).delete()
+        db.session.commit()

@@ -1,15 +1,10 @@
-import json
-import os
 from datetime import datetime, timedelta
 from models import User, Loan, Installment
+from sqlalchemy import func, and_
 
 def create_admin_if_not_exists():
     """Create admin user if no admin exists"""
-    admin = None
-    for user in User.get_all():
-        if user.is_admin:
-            admin = user
-            break
+    admin = User.query.filter_by(is_admin=True).first()
     
     if admin is None:
         admin = User(
@@ -39,7 +34,7 @@ def create_loan_installments(loan):
     
     # Create installments
     for i in range(1, int(loan.duration) + 1):
-        due_date = (datetime.fromisoformat(loan.created_at.split('T')[0]) + timedelta(days=30*i)).strftime('%Y-%m-%d')
+        due_date = (loan.created_at + timedelta(days=30*i)).date()
         installment = Installment(
             loan_id=loan.id,
             amount=round(installment_amount, 2),
@@ -68,7 +63,7 @@ def get_loan_progress(loan):
     upcoming_installments = []
     
     for inst in installments:
-        if not inst.paid and datetime.strptime(inst.due_date, '%Y-%m-%d').date() < today:
+        if not inst.paid and inst.due_date < today:
             overdue_installments.append(inst)
         elif not inst.paid:
             upcoming_installments.append(inst)
@@ -145,8 +140,7 @@ def get_system_statistics():
     
     # Overdue installments
     today = datetime.now().date()
-    overdue_installments = sum(1 for inst in installments 
-                              if not inst.paid and datetime.strptime(inst.due_date, '%Y-%m-%d').date() < today)
+    overdue_installments = sum(1 for inst in installments if not inst.paid and inst.due_date < today)
     
     return {
         'total_users': total_users,
