@@ -86,7 +86,7 @@
                                         <span class="badge bg-info">Completed</span>
                                     {% endif %}
                                 </td>
-                                <td>{{ loan_data.loan.created_at.strftime('%Y-%m-%d') }}</td>
+                                <td>{{ loan_data.loan.created_at|format_date }}</td>
                                 <td>
                                     <div class="btn-group btn-group-sm" role="group">
                                         <a href="{{ url_for('admin_view_loan', loan_id=loan_data.loan.id) }}" class="btn btn-outline-primary">

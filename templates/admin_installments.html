@@ -70,11 +70,11 @@
                                     </a>
                                 </td>
                                 <td>{{ item.installment.amount|currency }}</td>
-                                <td>{{ item.installment.due_date }}</td>
+                                <td>{{ item.installment.due_date|format_date }}</td>
                                 <td>
                                     {% if item.installment.paid %}
                                         <span class="badge bg-success">Paid</span>
-                                        <small class="d-block text-muted">on {{ item.installment.paid_date }}</small>
+                                        <small class="d-block text-muted">on {{ item.installment.paid_date|format_date }}</small>
                                     {% else %}
                                         {% if days_overdue > 0 %}
                                             <span class="badge bg-danger">{{ days_overdue }} days overdue</span>
