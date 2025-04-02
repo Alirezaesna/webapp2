@@ -1,0 +1,254 @@
+{% extends "layout.html" %}
+
+{% block title %}- Dashboard{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col">
+        <h1 class="display-6 mb-0">
+            <i class="fas fa-tachometer-alt me-2 text-primary"></i> My Dashboard
+        </h1>
+        <p class="text-muted lead">Welcome back, {{ current_user.first_name }} {{ current_user.last_name }}</p>
+    </div>
+    <div class="col-auto d-flex align-items-center">
+        <a href="{{ url_for('apply_loan') }}" class="btn btn-primary">
+            <i class="fas fa-file-invoice-dollar me-2"></i> Apply for Loan
+        </a>
+    </div>
+</div>
+
+<!-- Summary Cards -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                        <h6 class="text-muted">Active Loans</h6>
+                        <h3 class="card-title mb-0">{{ loan_stats.active_loan_count }}</h3>
+                    </div>
+                    <div class="icon-shape bg-primary text-white rounded-3 p-3">
+                        <i class="fas fa-money-bill-wave"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                        <h6 class="text-muted">Total Borrowed</h6>
+                        <h3 class="card-title mb-0">{{ loan_stats.total_borrowed|currency }}</h3>
+                    </div>
+                    <div class="icon-shape bg-success text-white rounded-3 p-3">
+                        <i class="fas fa-hand-holding-dollar"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                        <h6 class="text-muted">Total Remaining</h6>
+                        <h3 class="card-title mb-0">{{ loan_stats.total_remaining|currency }}</h3>
+                    </div>
+                    <div class="icon-shape bg-info text-white rounded-3 p-3">
+                        <i class="fas fa-coins"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                        <h6 class="text-muted">Overdue Installments</h6>
+                        <h3 class="card-title mb-0">{{ loan_stats.overdue_installments }}</h3>
+                    </div>
+                    <div class="icon-shape bg-danger text-white rounded-3 p-3">
+                        <i class="fas fa-exclamation-triangle"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Active Loans with Progress -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-money-bill-wave me-2 text-primary"></i> Active Loans
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if active_loans %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Amount</th>
+                                    <th>Duration</th>
+                                    <th>Paid</th>
+                                    <th>Progress</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for loan_data in active_loans %}
+                                    <tr>
+                                        <td>{{ loan_data.loan.amount|currency }}</td>
+                                        <td>{{ loan_data.loan.duration }} months</td>
+                                        <td>{{ loan_data.progress.paid_amount|currency }} 
+                                            <small class="text-muted">({{ loan_data.progress.paid_installments }}/{{ loan_data.progress.total_installments }} installments)</small>
+                                        </td>
+                                        <td>
+                                            <div class="progress" style="height: 10px;">
+                                                <div class="progress-bar" role="progressbar" 
+                                                     style="width: {{ loan_data.progress.completion_percentage }}%;"
+                                                     aria-valuenow="{{ loan_data.progress.completion_percentage }}" 
+                                                     aria-valuemin="0" aria-valuemax="100">
+                                                </div>
+                                            </div>
+                                            <small class="text-muted">{{ loan_data.progress.completion_percentage|round(1) }}% complete</small>
+                                        </td>
+                                        <td>
+                                            {% if loan_data.progress.overdue_installments > 0 %}
+                                                <span class="badge bg-danger">{{ loan_data.progress.overdue_installments }} overdue</span>
+                                            {% else %}
+                                                <span class="badge bg-success">Current</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <a href="{{ url_for('view_loan', loan_id=loan_data.loan.id) }}" class="btn btn-sm btn-outline-primary">Details</a>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="alert alert-info mb-0">
+                        <i class="fas fa-info-circle me-2"></i> You don't have any active loans.
+                        <a href="{{ url_for('apply_loan') }}" class="alert-link">Apply for a loan</a>.
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Upcoming Installments -->
+<div class="row">
+    <div class="col-md-6">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-calendar-day me-2 text-primary"></i> Upcoming Installments
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if upcoming_installments %}
+                    <div class="list-group list-group-flush">
+                        {% for installment in upcoming_installments %}
+                            {% set loan = loan_id=installment.loan_id|e %}
+                            {% set days_remaining = (datetime.strptime(installment.due_date, '%Y-%m-%d').date() - datetime.now().date()).days %}
+                            <div class="list-group-item px-0 py-3 border-bottom">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <h6 class="mb-1">{{ installment.amount|currency }}</h6>
+                                        <p class="mb-0 text-muted">
+                                            Due on: {{ installment.due_date }}
+                                            {% if days_remaining > 0 %}
+                                                <span class="badge bg-info ms-2">{{ days_remaining }} days left</span>
+                                            {% elif days_remaining == 0 %}
+                                                <span class="badge bg-warning ms-2">Due today</span>
+                                            {% else %}
+                                                <span class="badge bg-danger ms-2">{{ days_remaining|abs }} days overdue</span>
+                                            {% endif %}
+                                        </p>
+                                    </div>
+                                    <a href="{{ url_for('view_loan', loan_id=installment.loan_id) }}" class="btn btn-sm btn-outline-secondary">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="alert alert-info mb-0">
+                        <i class="fas fa-info-circle me-2"></i> You don't have any upcoming installments.
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-file-invoice-dollar me-2 text-primary"></i> Recent Loan Activity
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if loans %}
+                    <div class="list-group list-group-flush">
+                        {% for loan in loans[:5] %}
+                            <div class="list-group-item px-0 py-3 border-bottom">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <h6 class="mb-1">{{ loan.amount|currency }} - {{ loan.duration }} months</h6>
+                                        <p class="mb-0 text-muted">
+                                            Status: 
+                                            {% if loan.status == 'pending' %}
+                                                <span class="badge bg-warning">Pending</span>
+                                            {% elif loan.status == 'approved' %}
+                                                <span class="badge bg-success">Approved</span>
+                                            {% elif loan.status == 'rejected' %}
+                                                <span class="badge bg-danger">Rejected</span>
+                                            {% elif loan.status == 'completed' %}
+                                                <span class="badge bg-info">Completed</span>
+                                            {% endif %}
+                                            • Applied on: {{ datetime.fromisoformat(loan.created_at).strftime('%Y-%m-%d') }}
+                                        </p>
+                                    </div>
+                                    <a href="{{ url_for('view_loan', loan_id=loan.id) }}" class="btn btn-sm btn-outline-primary">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="alert alert-info mb-0">
+                        <i class="fas fa-info-circle me-2"></i> You don't have any loan activity.
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block styles %}
+<style>
+    .icon-shape {
+        width: 40px;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+</style>
+{% endblock %}

@@ -1,0 +1,322 @@
+{% extends "layout.html" %}
+
+{% block title %}- Reports{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col">
+        <h2>
+            <i class="fas fa-chart-line me-2 text-primary"></i> System Reports
+        </h2>
+        <p class="text-muted">View system statistics and analytical reports</p>
+    </div>
+    <div class="col-auto d-flex align-items-center">
+        <button class="btn btn-outline-primary" onclick="window.print()">
+            <i class="fas fa-print me-2"></i> Print Report
+        </button>
+    </div>
+</div>
+
+<!-- Summary Stats -->
+<div class="row mb-4">
+    <div class="col-md-3 mb-3">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body">
+                <h6 class="text-muted">Total Users</h6>
+                <h2 class="mb-0">{{ stats.total_users }}</h2>
+                <p class="small text-muted mb-0">{{ stats.admin_users }} admins, {{ stats.normal_users }} regular users</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3 mb-3">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body">
+                <h6 class="text-muted">Total Loans</h6>
+                <h2 class="mb-0">{{ stats.total_loans }}</h2>
+                <p class="small text-muted mb-0">
+                    {{ stats.active_loans }} active, 
+                    {{ stats.completed_loans }} completed
+                </p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3 mb-3">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body">
+                <h6 class="text-muted">Total Loan Amount</h6>
+                <h2 class="mb-0">{{ stats.total_loan_amount|currency }}</h2>
+                <p class="small text-muted mb-0">Across {{ stats.active_loans + stats.completed_loans }} loans</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3 mb-3">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body">
+                <h6 class="text-muted">Installments</h6>
+                <h2 class="mb-0">{{ stats.total_installments }}</h2>
+                <p class="small text-muted mb-0">
+                    {{ stats.paid_installments }} paid, 
+                    {{ stats.unpaid_installments }} unpaid
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <!-- Loan Status Chart -->
+    <div class="col-md-6 mb-3">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-header bg-white">
+                <h5 class="mb-0"><i class="fas fa-chart-pie me-2 text-primary"></i> Loan Status Distribution</h5>
+            </div>
+            <div class="card-body">
+                <canvas id="loanStatusChart" height="250"></canvas>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Installment Status Chart -->
+    <div class="col-md-6 mb-3">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-header bg-white">
+                <h5 class="mb-0"><i class="fas fa-chart-pie me-2 text-primary"></i> Installment Status Distribution</h5>
+            </div>
+            <div class="card-body">
+                <canvas id="installmentStatusChart" height="250"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <!-- Monthly Loan Trend -->
+    <div class="col-12">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white">
+                <h5 class="mb-0"><i class="fas fa-chart-line me-2 text-primary"></i> Monthly Loan Trends</h5>
+            </div>
+            <div class="card-body">
+                <canvas id="monthlyTrendChart" height="250"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <!-- Detailed Stats Table -->
+    <div class="col-12">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white">
+                <h5 class="mb-0"><i class="fas fa-table me-2 text-primary"></i> Detailed Statistics</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Metric</th>
+                                <th>Value</th>
+                                <th>Description</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Total Users</td>
+                                <td>{{ stats.total_users }}</td>
+                                <td>Total number of registered users in the system</td>
+                            </tr>
+                            <tr>
+                                <td>Admin Users</td>
+                                <td>{{ stats.admin_users }}</td>
+                                <td>Users with administrative privileges</td>
+                            </tr>
+                            <tr>
+                                <td>Regular Users</td>
+                                <td>{{ stats.normal_users }}</td>
+                                <td>Users without administrative privileges</td>
+                            </tr>
+                            <tr>
+                                <td>Total Loans</td>
+                                <td>{{ stats.total_loans }}</td>
+                                <td>Total number of loan applications in the system</td>
+                            </tr>
+                            <tr>
+                                <td>Active Loans</td>
+                                <td>{{ stats.active_loans }}</td>
+                                <td>Loans that have been approved and are currently being repaid</td>
+                            </tr>
+                            <tr>
+                                <td>Completed Loans</td>
+                                <td>{{ stats.completed_loans }}</td>
+                                <td>Loans that have been fully repaid</td>
+                            </tr>
+                            <tr>
+                                <td>Pending Loans</td>
+                                <td>{{ stats.pending_loans }}</td>
+                                <td>Loan applications awaiting approval</td>
+                            </tr>
+                            <tr>
+                                <td>Rejected Loans</td>
+                                <td>{{ stats.rejected_loans }}</td>
+                                <td>Loan applications that were rejected</td>
+                            </tr>
+                            <tr>
+                                <td>Total Loan Amount</td>
+                                <td>{{ stats.total_loan_amount|currency }}</td>
+                                <td>Total amount of all approved and completed loans</td>
+                            </tr>
+                            <tr>
+                                <td>Total Installments</td>
+                                <td>{{ stats.total_installments }}</td>
+                                <td>Total number of installments in the system</td>
+                            </tr>
+                            <tr>
+                                <td>Paid Installments</td>
+                                <td>{{ stats.paid_installments }}</td>
+                                <td>Installments that have been paid</td>
+                            </tr>
+                            <tr>
+                                <td>Unpaid Installments</td>
+                                <td>{{ stats.unpaid_installments }}</td>
+                                <td>Installments that have not been paid yet</td>
+                            </tr>
+                            <tr>
+                                <td>Overdue Installments</td>
+                                <td>{{ stats.overdue_installments }}</td>
+                                <td>Installments that are past their due date and not paid</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Loan Status Chart
+    const loanStatusCtx = document.getElementById('loanStatusChart').getContext('2d');
+    const loanStatusChart = new Chart(loanStatusCtx, {
+        type: 'doughnut',
+        data: {
+            labels: ['Approved', 'Completed', 'Pending', 'Rejected'],
+            datasets: [{
+                data: [
+                    {{ loan_status.approved }},
+                    {{ loan_status.completed }},
+                    {{ loan_status.pending }},
+                    {{ loan_status.rejected }}
+                ],
+                backgroundColor: [
+                    '#28a745', // success
+                    '#17a2b8', // info
+                    '#ffc107', // warning
+                    '#dc3545'  // danger
+                ],
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                }
+            }
+        }
+    });
+    
+    // Installment Status Chart
+    const installmentStatusCtx = document.getElementById('installmentStatusChart').getContext('2d');
+    const installmentStatusChart = new Chart(installmentStatusCtx, {
+        type: 'doughnut',
+        data: {
+            labels: ['Paid', 'Unpaid', 'Overdue'],
+            datasets: [{
+                data: [
+                    {{ installment_status.paid }},
+                    {{ installment_status.unpaid }},
+                    {{ installment_status.overdue }}
+                ],
+                backgroundColor: [
+                    '#28a745', // success
+                    '#17a2b8', // info
+                    '#dc3545'  // danger
+                ],
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                }
+            }
+        }
+    });
+    
+    // Monthly Trend Chart
+    const monthlyTrendCtx = document.getElementById('monthlyTrendChart').getContext('2d');
+    const monthlyTrendChart = new Chart(monthlyTrendCtx, {
+        type: 'bar',
+        data: {
+            labels: {{ months|tojson }},
+            datasets: [
+                {
+                    label: 'Number of Loans',
+                    data: {{ monthly_loan_counts|tojson }},
+                    backgroundColor: 'rgba(40, 167, 69, 0.6)',
+                    borderColor: '#28a745',
+                    borderWidth: 1,
+                    yAxisID: 'y',
+                },
+                {
+                    label: 'Loan Amount',
+                    data: {{ monthly_loan_amounts|tojson }},
+                    type: 'line',
+                    fill: false,
+                    borderColor: '#17a2b8',
+                    backgroundColor: '#17a2b8',
+                    yAxisID: 'y1',
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                y: {
+                    type: 'linear',
+                    display: true,
+                    position: 'left',
+                    title: {
+                        display: true,
+                        text: 'Number of Loans'
+                    }
+                },
+                y1: {
+                    type: 'linear',
+                    display: true,
+                    position: 'right',
+                    title: {
+                        display: true,
+                        text: 'Loan Amount'
+                    },
+                    grid: {
+                        drawOnChartArea: false
+                    }
+                }
+            }
+        }
+    });
+});
+</script>
+{% endblock %}

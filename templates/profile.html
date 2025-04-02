@@ -1,0 +1,182 @@
+{% extends "layout.html" %}
+
+{% block title %}- Profile{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col">
+        <h1 class="display-6 mb-0">
+            <i class="fas fa-id-card me-2 text-primary"></i> My Profile
+        </h1>
+        <p class="text-muted lead">Manage your account information</p>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-4 mb-4">
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-body text-center p-4">
+                <div class="avatar-circle mb-3 mx-auto">
+                    <span class="avatar-initials display-4">{{ current_user.first_name[0]|upper }}{{ current_user.last_name[0]|upper }}</span>
+                </div>
+                <h4>{{ current_user.first_name }} {{ current_user.last_name }}</h4>
+                <p class="text-muted">@{{ current_user.username }}</p>
+                
+                <div class="d-grid gap-2 mt-3">
+                    <a href="{{ url_for('change_password') }}" class="btn btn-outline-primary">
+                        <i class="fas fa-key me-2"></i> Change Password
+                    </a>
+                    {% if current_user.is_admin %}
+                        <a href="{{ url_for('admin_dashboard') }}" class="btn btn-outline-secondary">
+                            <i class="fas fa-tachometer-alt me-2"></i> Admin Dashboard
+                        </a>
+                    {% else %}
+                        <a href="{{ url_for('user_dashboard') }}" class="btn btn-outline-secondary">
+                            <i class="fas fa-tachometer-alt me-2"></i> My Dashboard
+                        </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white">
+                <h5 class="mb-0"><i class="fas fa-info-circle me-2 text-primary"></i> Account Information</h5>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <label class="small text-muted">Username</label>
+                    <p class="mb-0">{{ current_user.username }}</p>
+                </div>
+                <div class="mb-3">
+                    <label class="small text-muted">Email</label>
+                    <p class="mb-0">{{ current_user.email }}</p>
+                </div>
+                <div class="mb-3">
+                    <label class="small text-muted">Role</label>
+                    <p class="mb-0">
+                        {% if current_user.is_admin %}
+                            <span class="badge bg-primary">Administrator</span>
+                        {% else %}
+                            <span class="badge bg-secondary">Regular User</span>
+                        {% endif %}
+                    </p>
+                </div>
+                <div class="mb-0">
+                    <label class="small text-muted">Account Created</label>
+                    <p class="mb-0">{{ datetime.fromisoformat(current_user.created_at).strftime('%Y-%m-%d') }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-8">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white">
+                <h5 class="mb-0"><i class="fas fa-user-edit me-2 text-primary"></i> Edit Profile</h5>
+            </div>
+            <div class="card-body p-4">
+                <form method="post" action="{{ url_for('profile') }}">
+                    {{ form.hidden_tag() }}
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            {{ form.first_name.label(class="form-label") }}
+                            {% if form.first_name.errors %}
+                                {{ form.first_name(class="form-control is-invalid") }}
+                                <div class="invalid-feedback">
+                                    {% for error in form.first_name.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% else %}
+                                {{ form.first_name(class="form-control") }}
+                            {% endif %}
+                        </div>
+                        
+                        <div class="col-md-6">
+                            {{ form.last_name.label(class="form-label") }}
+                            {% if form.last_name.errors %}
+                                {{ form.last_name(class="form-control is-invalid") }}
+                                <div class="invalid-feedback">
+                                    {% for error in form.last_name.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% else %}
+                                {{ form.last_name(class="form-control") }}
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        {{ form.email.label(class="form-label") }}
+                        {% if form.email.errors %}
+                            {{ form.email(class="form-control is-invalid") }}
+                            <div class="invalid-feedback">
+                                {% for error in form.email.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% else %}
+                            {{ form.email(class="form-control") }}
+                        {% endif %}
+                    </div>
+                    
+                    <div class="mb-3">
+                        {{ form.phone.label(class="form-label") }}
+                        {% if form.phone.errors %}
+                            {{ form.phone(class="form-control is-invalid") }}
+                            <div class="invalid-feedback">
+                                {% for error in form.phone.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% else %}
+                            {{ form.phone(class="form-control") }}
+                        {% endif %}
+                    </div>
+                    
+                    <div class="mb-3">
+                        {{ form.address.label(class="form-label") }}
+                        {% if form.address.errors %}
+                            {{ form.address(class="form-control is-invalid", rows=3) }}
+                            <div class="invalid-feedback">
+                                {% for error in form.address.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% else %}
+                            {{ form.address(class="form-control", rows=3) }}
+                        {% endif %}
+                    </div>
+                    
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        {{ form.submit(class="btn btn-primary") }}
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block styles %}
+<style>
+.avatar-circle {
+    width: 100px;
+    height: 100px;
+    background-color: var(--bs-primary);
+    text-align: center;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.avatar-initials {
+    color: white;
+    line-height: 1;
+}
+</style>
+{% endblock %}

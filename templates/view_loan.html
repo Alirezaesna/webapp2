@@ -1,0 +1,373 @@
+{% extends "layout.html" %}
+
+{% block title %}- View Loan{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col">
+        <h1 class="h2 mb-0">
+            <i class="fas fa-money-bill-wave me-2 text-primary"></i> Loan Details
+        </h1>
+        <p class="text-muted">Loan #{{ loan.id }}</p>
+    </div>
+    <div class="col-auto d-flex align-items-center">
+        {% if is_admin %}
+            <a href="{{ url_for('admin_edit_loan', loan_id=loan.id) }}" class="btn btn-outline-primary me-2">
+                <i class="fas fa-edit me-1"></i> Edit Loan
+            </a>
+            
+            {% if loan.status == 'pending' %}
+                <div class="btn-group">
+                    <form method="POST" action="{{ url_for('admin_loan_action') }}" class="d-inline">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                        <input type="hidden" name="loan_id" value="{{ loan.id }}">
+                        <input type="hidden" name="action" value="approve">
+                        <button type="submit" class="btn btn-success me-2">
+                            <i class="fas fa-check me-1"></i> Approve
+                        </button>
+                    </form>
+                    <form method="POST" action="{{ url_for('admin_loan_action') }}" class="d-inline">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                        <input type="hidden" name="loan_id" value="{{ loan.id }}">
+                        <input type="hidden" name="action" value="reject">
+                        <button type="submit" class="btn btn-danger">
+                            <i class="fas fa-times me-1"></i> Reject
+                        </button>
+                    </form>
+                </div>
+            {% endif %}
+        {% else %}
+            <a href="{{ url_for('my_loans') }}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left me-1"></i> Back to My Loans
+            </a>
+        {% endif %}
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-header bg-white">
+                <h5 class="mb-0"><i class="fas fa-info-circle me-2 text-primary"></i> Loan Information</h5>
+            </div>
+            <div class="card-body">
+                <div class="row mb-3">
+                    <div class="col-sm-4 text-muted">Loan Amount:</div>
+                    <div class="col-sm-8 fw-bold">{{ loan.amount|currency }}</div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-sm-4 text-muted">Duration:</div>
+                    <div class="col-sm-8">{{ loan.duration }} months</div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-sm-4 text-muted">Status:</div>
+                    <div class="col-sm-8">
+                        {% if loan.status == 'pending' %}
+                            <span class="badge bg-warning">Pending</span>
+                        {% elif loan.status == 'approved' %}
+                            <span class="badge bg-success">Approved</span>
+                        {% elif loan.status == 'rejected' %}
+                            <span class="badge bg-danger">Rejected</span>
+                        {% elif loan.status == 'completed' %}
+                            <span class="badge bg-info">Completed</span>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-sm-4 text-muted">Created:</div>
+                    <div class="col-sm-8">{{ datetime.fromisoformat(loan.created_at).strftime('%Y-%m-%d %H:%M') }}</div>
+                </div>
+                
+                {% if loan.status == 'approved' or loan.status == 'completed' %}
+                    <div class="row mb-3">
+                        <div class="col-sm-4 text-muted">Approved By:</div>
+                        <div class="col-sm-8">{{ approved_by.username if approved_by else 'Unknown' }}</div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-sm-4 text-muted">Approved At:</div>
+                        <div class="col-sm-8">{{ datetime.fromisoformat(loan.approved_at).strftime('%Y-%m-%d %H:%M') if loan.approved_at else 'N/A' }}</div>
+                    </div>
+                {% endif %}
+                
+                <div class="row">
+                    <div class="col-sm-4 text-muted">Purpose:</div>
+                    <div class="col-sm-8">{{ loan.purpose }}</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-header bg-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-user me-2 text-primary"></i> Borrower Information
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row mb-3">
+                    <div class="col-sm-4 text-muted">Name:</div>
+                    <div class="col-sm-8">{{ user.first_name }} {{ user.last_name }}</div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-sm-4 text-muted">Username:</div>
+                    <div class="col-sm-8">{{ user.username }}</div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-sm-4 text-muted">Email:</div>
+                    <div class="col-sm-8">{{ user.email }}</div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-sm-4 text-muted">Phone:</div>
+                    <div class="col-sm-8">{{ user.phone }}</div>
+                </div>
+                <div class="row">
+                    <div class="col-sm-4 text-muted">Address:</div>
+                    <div class="col-sm-8">{{ user.address }}</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% if loan.status == 'approved' or loan.status == 'completed' %}
+<div class="row mb-4">
+    <div class="col">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white">
+                <h5 class="mb-0"><i class="fas fa-chart-pie me-2 text-primary"></i> Loan Progress</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-8">
+                        <h6>Repayment Status</h6>
+                        <div class="progress mb-2" style="height: 20px;">
+                            <div class="progress-bar bg-success" role="progressbar" 
+                                 style="width: {{ progress.completion_percentage }}%;" 
+                                 aria-valuenow="{{ progress.completion_percentage }}" 
+                                 aria-valuemin="0" aria-valuemax="100">
+                                {{ progress.completion_percentage|round(1) }}%
+                            </div>
+                        </div>
+                        <div class="row text-center">
+                            <div class="col-4">
+                                <div class="p-2 border rounded mb-2">
+                                    <h5 class="mb-0">{{ progress.paid_amount|currency }}</h5>
+                                    <small class="text-muted">Paid</small>
+                                </div>
+                            </div>
+                            <div class="col-4">
+                                <div class="p-2 border rounded mb-2">
+                                    <h5 class="mb-0">{{ progress.remaining_amount|currency }}</h5>
+                                    <small class="text-muted">Remaining</small>
+                                </div>
+                            </div>
+                            <div class="col-4">
+                                <div class="p-2 border rounded mb-2">
+                                    <h5 class="mb-0">{{ loan.amount|currency }}</h5>
+                                    <small class="text-muted">Total</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <h6>Installment Status</h6>
+                        <div class="p-2 border rounded mb-2 text-center">
+                            <div class="row">
+                                <div class="col-6">
+                                    <h5 class="mb-0 text-success">{{ progress.paid_installments }}</h5>
+                                    <small class="text-muted">Paid</small>
+                                </div>
+                                <div class="col-6">
+                                    <h5 class="mb-0 text-warning">{{ progress.remaining_installments }}</h5>
+                                    <small class="text-muted">Remaining</small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="p-2 border rounded mb-2 text-center">
+                            <div class="row">
+                                <div class="col-6">
+                                    <h5 class="mb-0 text-danger">{{ progress.overdue_installments }}</h5>
+                                    <small class="text-muted">Overdue</small>
+                                </div>
+                                <div class="col-6">
+                                    <h5 class="mb-0">{{ progress.total_installments }}</h5>
+                                    <small class="text-muted">Total</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                <h5 class="mb-0"><i class="fas fa-calendar-alt me-2 text-primary"></i> Installment Schedule</h5>
+                {% if is_admin %}
+                    <a href="{{ url_for('admin_add_installment') }}" class="btn btn-sm btn-outline-primary">
+                        <i class="fas fa-plus me-1"></i> Add Installment
+                    </a>
+                {% endif %}
+            </div>
+            <div class="card-body">
+                {% if installments %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th scope="col">#</th>
+                                    <th scope="col">Amount</th>
+                                    <th scope="col">Due Date</th>
+                                    <th scope="col">Status</th>
+                                    <th scope="col">Payment Date</th>
+                                    {% if is_admin %}
+                                        <th scope="col">Actions</th>
+                                    {% endif %}
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for installment in installments %}
+                                    {% set days_remaining = (datetime.strptime(installment.due_date, '%Y-%m-%d').date() - datetime.now().date()).days %}
+                                    <tr class="{% if installment.paid %}table-success{% elif days_remaining < 0 %}table-danger{% elif days_remaining <= 7 %}table-warning{% endif %}">
+                                        <td>{{ loop.index }}</td>
+                                        <td>{{ installment.amount|currency }}</td>
+                                        <td>{{ installment.due_date }}</td>
+                                        <td>
+                                            {% if installment.paid %}
+                                                <span class="badge bg-success">Paid</span>
+                                            {% elif days_remaining < 0 %}
+                                                <span class="badge bg-danger">{{ days_remaining|abs }} days overdue</span>
+                                            {% elif days_remaining == 0 %}
+                                                <span class="badge bg-warning">Due today</span>
+                                            {% else %}
+                                                <span class="badge bg-info">Due in {{ days_remaining }} days</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>{{ installment.paid_date if installment.paid else '-' }}</td>
+                                        {% if is_admin %}
+                                            <td>
+                                                <div class="btn-group btn-group-sm" role="group">
+                                                    <a href="{{ url_for('admin_edit_installment', installment_id=installment.id) }}" class="btn btn-outline-primary">
+                                                        <i class="fas fa-edit"></i>
+                                                    </a>
+                                                    {% if not installment.paid %}
+                                                        <form method="POST" action="{{ url_for('admin_pay_installment', installment_id=installment.id) }}">
+                                                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                                                            <button type="submit" class="btn btn-outline-success" 
+                                                                    onclick="return confirm('Mark this installment as paid?')">
+                                                                <i class="fas fa-check"></i>
+                                                            </button>
+                                                        </form>
+                                                    {% endif %}
+                                                </div>
+                                            </td>
+                                        {% endif %}
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i> No installments have been created for this loan yet.
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+{% if is_admin and loan.status != 'rejected' %}
+<div class="row mt-4">
+    <div class="col">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white">
+                <h5 class="mb-0"><i class="fas fa-cogs me-2 text-primary"></i> Administrative Actions</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    {% if loan.status == 'pending' %}
+                        <div class="col-md-6">
+                            <form method="POST" action="{{ url_for('admin_loan_action') }}">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                                <input type="hidden" name="loan_id" value="{{ loan.id }}">
+                                <input type="hidden" name="action" value="approve">
+                                <button type="submit" class="btn btn-success w-100 p-3">
+                                    <i class="fas fa-check me-2"></i> Approve Loan
+                                    <div class="small mt-1">Create installments and mark as approved</div>
+                                </button>
+                            </form>
+                        </div>
+                        <div class="col-md-6">
+                            <form method="POST" action="{{ url_for('admin_loan_action') }}">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                                <input type="hidden" name="loan_id" value="{{ loan.id }}">
+                                <input type="hidden" name="action" value="reject">
+                                <button type="submit" class="btn btn-danger w-100 p-3">
+                                    <i class="fas fa-times me-2"></i> Reject Loan
+                                    <div class="small mt-1">Deny this loan application</div>
+                                </button>
+                            </form>
+                        </div>
+                    {% elif loan.status == 'approved' %}
+                        <div class="col-md-6">
+                            <form method="POST" action="{{ url_for('admin_loan_action') }}">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                                <input type="hidden" name="loan_id" value="{{ loan.id }}">
+                                <input type="hidden" name="action" value="complete">
+                                <button type="submit" class="btn btn-info w-100 p-3">
+                                    <i class="fas fa-check-double me-2"></i> Mark as Completed
+                                    <div class="small mt-1">Mark this loan as fully paid and completed</div>
+                                </button>
+                            </form>
+                        </div>
+                    {% endif %}
+                    
+                    <div class="col-md-6">
+                        <button type="button" class="btn btn-outline-danger w-100 p-3" 
+                                data-bs-toggle="modal" data-bs-target="#deleteLoanModal">
+                            <i class="fas fa-trash-alt me-2"></i> Delete Loan
+                            <div class="small mt-1">Permanently delete this loan and all installments</div>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Loan Modal -->
+<div class="modal fade" id="deleteLoanModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Confirm Deletion</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to delete this loan of <strong>{{ loan.amount|currency }}</strong>?</p>
+                <p class="text-danger">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    This action cannot be undone. All loan data and associated installments will be permanently deleted.
+                </p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <form action="{{ url_for('admin_loan_action') }}" method="POST">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                    <input type="hidden" name="loan_id" value="{{ loan.id }}">
+                    <input type="hidden" name="action" value="delete">
+                    <button type="submit" class="btn btn-danger">Delete Loan</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}

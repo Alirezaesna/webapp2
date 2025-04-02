@@ -1,0 +1,151 @@
+{% extends "layout.html" %}
+
+{% block title %}- Apply for Loan{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col">
+        <h1 class="display-6 mb-0">
+            <i class="fas fa-file-invoice-dollar me-2 text-primary"></i> Apply for Loan
+        </h1>
+        <p class="text-muted lead">Submit a new interest-free loan application</p>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body p-4">
+                <form method="post" action="{{ url_for('apply_loan') }}">
+                    {{ form.hidden_tag() }}
+                    
+                    <div class="mb-3">
+                        {{ form.amount.label(class="form-label") }}
+                        {% if form.amount.errors %}
+                            {{ form.amount(class="form-control is-invalid") }}
+                            <div class="invalid-feedback">
+                                {% for error in form.amount.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% else %}
+                            {{ form.amount(class="form-control", placeholder="Enter the loan amount") }}
+                        {% endif %}
+                        <div class="form-text">Enter the total amount you wish to borrow</div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        {{ form.duration.label(class="form-label") }}
+                        {% if form.duration.errors %}
+                            {{ form.duration(class="form-control is-invalid") }}
+                            <div class="invalid-feedback">
+                                {% for error in form.duration.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% else %}
+                            {{ form.duration(class="form-control", placeholder="Enter the loan duration in months") }}
+                        {% endif %}
+                        <div class="form-text">Enter the number of months to repay the loan (1-120)</div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        {{ form.purpose.label(class="form-label") }}
+                        {% if form.purpose.errors %}
+                            {{ form.purpose(class="form-control is-invalid", rows=5) }}
+                            <div class="invalid-feedback">
+                                {% for error in form.purpose.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% else %}
+                            {{ form.purpose(class="form-control", rows=5, placeholder="Describe the purpose of this loan") }}
+                        {% endif %}
+                        <div class="form-text">Explain in detail why you need this loan and how you plan to use it</div>
+                    </div>
+                    
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <a href="{{ url_for('user_dashboard') }}" class="btn btn-secondary me-md-2">Cancel</a>
+                        {{ form.submit(class="btn btn-primary") }}
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0"><i class="fas fa-info-circle me-2"></i> About Qard al-Hasanah</h5>
+            </div>
+            <div class="card-body">
+                <p>Qard al-Hasanah is an interest-free loan given or taken for the sake of Allah. It is a form of "good loan" where the lender does not charge any interest or additional amount over the money lent.</p>
+                <p class="mb-0">Your application will be reviewed by an administrator who will either approve or reject your request based on the information provided.</p>
+            </div>
+        </div>
+        
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-info text-white">
+                <h5 class="mb-0"><i class="fas fa-calculator me-2"></i> Loan Calculator</h5>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <label for="calc-amount" class="form-label">Loan Amount</label>
+                    <input type="number" class="form-control" id="calc-amount" min="0.01" step="0.01">
+                </div>
+                <div class="mb-3">
+                    <label for="calc-duration" class="form-label">Duration (months)</label>
+                    <input type="number" class="form-control" id="calc-duration" min="1" max="120">
+                </div>
+                <div class="alert alert-info" id="calc-result">
+                    Fill in the values above to calculate your monthly installment.
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const calcAmount = document.getElementById('calc-amount');
+        const calcDuration = document.getElementById('calc-duration');
+        const calcResult = document.getElementById('calc-result');
+        const formAmount = document.getElementById('amount');
+        const formDuration = document.getElementById('duration');
+        
+        // Function to calculate monthly installment
+        function calculateInstallment() {
+            const amount = parseFloat(calcAmount.value);
+            const duration = parseInt(calcDuration.value);
+            
+            if (!isNaN(amount) && !isNaN(duration) && amount > 0 && duration > 0) {
+                const monthlyInstallment = amount / duration;
+                calcResult.innerHTML = `
+                    <p class="mb-0"><strong>Monthly Installment:</strong> ${monthlyInstallment.toFixed(2)}</p>
+                    <p class="mb-0"><strong>Total to be repaid:</strong> ${amount.toFixed(2)}</p>
+                    <p class="mb-0 mt-2"><small>This is an interest-free loan (Qard al-Hasanah).</small></p>
+                `;
+            } else {
+                calcResult.innerHTML = 'Fill in the values above to calculate your monthly installment.';
+            }
+        }
+        
+        // Add event listeners
+        calcAmount.addEventListener('input', calculateInstallment);
+        calcDuration.addEventListener('input', calculateInstallment);
+        
+        // Sync values from the form to the calculator
+        formAmount.addEventListener('input', function() {
+            calcAmount.value = formAmount.value;
+            calculateInstallment();
+        });
+        
+        formDuration.addEventListener('input', function() {
+            calcDuration.value = formDuration.value;
+            calculateInstallment();
+        });
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,144 @@
+{% extends "layout.html" %}
+
+{% block title %}- Manage Installments{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col">
+        <h2>
+            <i class="fas fa-calendar-alt me-2 text-primary"></i> Manage Installments
+        </h2>
+        <p class="text-muted">View and manage all loan installments</p>
+    </div>
+    <div class="col-auto d-flex align-items-center">
+        <a href="{{ url_for('admin_add_installment') }}" class="btn btn-primary">
+            <i class="fas fa-plus me-2"></i> Add New Installment
+        </a>
+    </div>
+</div>
+
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-body">
+        <form method="GET" action="{{ url_for('admin_installments') }}" class="row align-items-end">
+            <div class="col-md-6 col-lg-4">
+                {{ form.status.label(class="form-label") }}
+                {{ form.status(class="form-select") }}
+            </div>
+            <div class="col-md-6 col-lg-2 mt-3 mt-md-0">
+                {{ form.submit(class="btn btn-primary w-100") }}
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="card border-0 shadow-sm">
+    <div class="card-body">
+        {% if installments %}
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th scope="col">ID</th>
+                            <th scope="col">User</th>
+                            <th scope="col">Loan ID</th>
+                            <th scope="col">Amount</th>
+                            <th scope="col">Due Date</th>
+                            <th scope="col">Status</th>
+                            <th scope="col">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in installments %}
+                            {% set days_overdue = 0 %}
+                            {% if not item.installment.paid %}
+                                {% set days_overdue = (datetime.now().date() - datetime.strptime(item.installment.due_date, '%Y-%m-%d').date()).days %}
+                            {% endif %}
+                            
+                            <tr class="{% if not item.installment.paid and days_overdue > 0 %}table-danger{% elif item.installment.paid %}table-success{% endif %}">
+                                <td>{{ item.installment.id }}</td>
+                                <td>
+                                    {% if item.user %}
+                                        {{ item.user.username }}
+                                        <small class="d-block text-muted">{{ item.user.first_name }} {{ item.user.last_name }}</small>
+                                    {% else %}
+                                        <span class="text-muted">Unknown user</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <a href="{{ url_for('admin_view_loan', loan_id=item.loan.id) }}" class="text-decoration-none">
+                                        {{ item.loan.id }}
+                                    </a>
+                                </td>
+                                <td>{{ item.installment.amount|currency }}</td>
+                                <td>{{ item.installment.due_date }}</td>
+                                <td>
+                                    {% if item.installment.paid %}
+                                        <span class="badge bg-success">Paid</span>
+                                        <small class="d-block text-muted">on {{ item.installment.paid_date }}</small>
+                                    {% else %}
+                                        {% if days_overdue > 0 %}
+                                            <span class="badge bg-danger">{{ days_overdue }} days overdue</span>
+                                        {% else %}
+                                            <span class="badge bg-warning">Due in {{ days_overdue|abs }} days</span>
+                                        {% endif %}
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <div class="btn-group btn-group-sm" role="group">
+                                        <a href="{{ url_for('admin_edit_installment', installment_id=item.installment.id) }}" class="btn btn-outline-primary">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                        {% if not item.installment.paid %}
+                                            <form method="POST" action="{{ url_for('admin_pay_installment', installment_id=item.installment.id) }}">
+                                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                                                <button type="submit" class="btn btn-outline-success" 
+                                                        onclick="return confirm('Mark this installment as paid?')">
+                                                    <i class="fas fa-check"></i>
+                                                </button>
+                                            </form>
+                                        {% endif %}
+                                        <button type="button" class="btn btn-outline-danger" 
+                                                data-bs-toggle="modal" data-bs-target="#deleteInstallmentModal{{ item.installment.id }}">
+                                            <i class="fas fa-trash-alt"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                            
+                            <!-- Delete Installment Modal -->
+                            <div class="modal fade" id="deleteInstallmentModal{{ item.installment.id }}" tabindex="-1" aria-hidden="true">
+                                <div class="modal-dialog">
+                                    <div class="modal-content">
+                                        <div class="modal-header">
+                                            <h5 class="modal-title">Confirm Deletion</h5>
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                        </div>
+                                        <div class="modal-body">
+                                            <p>Are you sure you want to delete this installment of <strong>{{ item.installment.amount|currency }}</strong>?</p>
+                                            <p class="text-danger">
+                                                <i class="fas fa-exclamation-triangle me-2"></i>
+                                                This action cannot be undone.
+                                            </p>
+                                        </div>
+                                        <div class="modal-footer">
+                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                            <form action="{{ url_for('admin_delete_installment', installment_id=item.installment.id) }}" method="POST">
+                                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                                                <button type="submit" class="btn btn-danger">Delete Installment</button>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div class="alert alert-info">
+                <i class="fas fa-info-circle me-2"></i> No installments found with the selected filter.
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

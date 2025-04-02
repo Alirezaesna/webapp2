@@ -1,0 +1,14 @@
+[
+    {
+        "id": "1",
+        "username": "admin",
+        "email": "admin@qardhasanah.com",
+        "password_hash": "scrypt:32768:8:1$4S6s0rYVUhMIKpBb$5eada1a30088d279c1a142c3ad062ed0388b65c56b2ac9209b081994a7814841dd21a915524ecbc16fae351762c0c16dcfedf9321d797e8ab3329f3cccec3d8c",
+        "first_name": "System",
+        "last_name": "Admin",
+        "phone": "1234567890",
+        "address": "System",
+        "is_admin": true,
+        "created_at": "2025-04-02T15:01:12.814079"
+    }
+]

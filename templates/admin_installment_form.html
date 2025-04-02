@@ -1,0 +1,121 @@
+{% extends "layout.html" %}
+
+{% block title %}- {{ title }}{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col">
+        <h2>
+            {% if 'Add' in title %}
+                <i class="fas fa-plus me-2 text-primary"></i> {{ title }}
+            {% else %}
+                <i class="fas fa-edit me-2 text-primary"></i> {{ title }}
+            {% endif %}
+        </h2>
+    </div>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body p-4">
+                <form method="post" action="">
+                    {{ form.hidden_tag() }}
+                    
+                    <div class="mb-3">
+                        {{ form.loan_id.label(class="form-label") }}
+                        {% if form.loan_id.errors %}
+                            {{ form.loan_id(class="form-select is-invalid") }}
+                            <div class="invalid-feedback">
+                                {% for error in form.loan_id.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% else %}
+                            {{ form.loan_id(class="form-select") }}
+                        {% endif %}
+                    </div>
+                    
+                    <div class="mb-3">
+                        {{ form.amount.label(class="form-label") }}
+                        {% if form.amount.errors %}
+                            {{ form.amount(class="form-control is-invalid") }}
+                            <div class="invalid-feedback">
+                                {% for error in form.amount.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% else %}
+                            {{ form.amount(class="form-control", placeholder="Enter installment amount") }}
+                        {% endif %}
+                    </div>
+                    
+                    <div class="mb-3">
+                        {{ form.due_date.label(class="form-label") }}
+                        {% if form.due_date.errors %}
+                            {{ form.due_date(class="form-control is-invalid", type="date") }}
+                            <div class="invalid-feedback">
+                                {% for error in form.due_date.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% else %}
+                            {{ form.due_date(class="form-control", type="date") }}
+                        {% endif %}
+                    </div>
+                    
+                    <div class="mb-3">
+                        <div class="form-check">
+                            {{ form.paid(class="form-check-input") }}
+                            {{ form.paid.label(class="form-check-label") }}
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3" id="paid-date-container">
+                        {{ form.paid_date.label(class="form-label") }}
+                        {% if form.paid_date.errors %}
+                            {{ form.paid_date(class="form-control is-invalid", type="date") }}
+                            <div class="invalid-feedback">
+                                {% for error in form.paid_date.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% else %}
+                            {{ form.paid_date(class="form-control", type="date") }}
+                        {% endif %}
+                        <div class="form-text">Leave blank to use today's date</div>
+                    </div>
+                    
+                    <div class="d-flex justify-content-between">
+                        <a href="{{ url_for('admin_installments') }}" class="btn btn-secondary">Cancel</a>
+                        {{ form.submit(class="btn btn-primary") }}
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const paidCheckbox = document.getElementById('paid');
+        const paidDateContainer = document.getElementById('paid-date-container');
+        
+        function togglePaidDateVisibility() {
+            if (paidCheckbox.checked) {
+                paidDateContainer.style.display = 'block';
+            } else {
+                paidDateContainer.style.display = 'none';
+            }
+        }
+        
+        // Initialize visibility
+        togglePaidDateVisibility();
+        
+        // Add event listener
+        paidCheckbox.addEventListener('change', togglePaidDateVisibility);
+    });
+</script>
+{% endblock %}
