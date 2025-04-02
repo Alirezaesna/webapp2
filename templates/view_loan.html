@@ -75,7 +75,7 @@
                 </div>
                 <div class="row mb-3">
                     <div class="col-sm-4 text-muted">Created:</div>
-                    <div class="col-sm-8">{{ loan.created_at.strftime('%Y-%m-%d %H:%M') }}</div>
+                    <div class="col-sm-8">{{ loan.created_at|format_date }}</div>
                 </div>
                 
                 {% if loan.status == 'approved' or loan.status == 'completed' %}
@@ -85,7 +85,7 @@
                     </div>
                     <div class="row mb-3">
                         <div class="col-sm-4 text-muted">Approved At:</div>
-                        <div class="col-sm-8">{{ loan.approved_at.strftime('%Y-%m-%d %H:%M') if loan.approved_at else 'N/A' }}</div>
+                        <div class="col-sm-8">{{ loan.approved_at|format_date if loan.approved_at else 'N/A' }}</div>
                     </div>
                 {% endif %}
                 
@@ -236,7 +236,7 @@
                                     <tr class="{% if installment.paid %}table-success{% elif days_remaining < 0 %}table-danger{% elif days_remaining <= 7 %}table-warning{% endif %}">
                                         <td>{{ loop.index }}</td>
                                         <td>{{ installment.amount|currency }}</td>
-                                        <td>{{ installment.due_date }}</td>
+                                        <td>{{ installment.due_date|format_date }}</td>
                                         <td>
                                             {% if installment.paid %}
                                                 <span class="badge bg-success">Paid</span>
@@ -248,7 +248,7 @@
                                                 <span class="badge bg-info">Due in {{ days_remaining }} days</span>
                                             {% endif %}
                                         </td>
-                                        <td>{{ installment.paid_date if installment.paid else '-' }}</td>
+                                        <td>{{ installment.paid_date|format_date if installment.paid else '-' }}</td>
                                         {% if is_admin %}
                                             <td>
                                                 <div class="btn-group btn-group-sm" role="group">
