@@ -10,7 +10,7 @@ from forms import (LoginForm, RegisterForm, EditProfileForm, ChangePasswordForm,
                   LoanApplicationForm, LoanForm, InstallmentForm, UserForm,
                   LoanActionForm, InstallmentPaymentForm, InstallmentFilterForm)
 from utils import (create_admin_if_not_exists, format_currency, create_loan_installments,
-                  get_loan_progress, get_user_loan_statistics, get_system_statistics)
+                  get_loan_progress, get_user_loan_statistics, get_system_statistics, to_jalali_date)
 
 # Admin user will be created when the application starts
 # (moved to main.py)
@@ -32,7 +32,9 @@ def format_date_filter(value, format='%Y-%m-%d'):
             value = datetime.fromisoformat(value)
         except (ValueError, TypeError):
             return value
-    return value.strftime(format)
+    
+    # Convert to Jalali date
+    return to_jalali_date(value)
 
 @app.context_processor
 def inject_globals():
@@ -65,14 +67,14 @@ def login():
             next_page = request.args.get('next')
             return redirect(next_page or url_for('index'))
         else:
-            flash('Invalid username or password', 'danger')
+            flash('نام کاربری یا رمز عبور نامعتبر است', 'danger')
     
     return render_template('login.html', form=form)
 
 @app.route('/logout')
 def logout():
     logout_user()
-    flash('You have been logged out.', 'info')
+    flash('شما از سیستم خارج شدید.', 'info')
     return redirect(url_for('index'))
 
 @app.route('/register', methods=['GET', 'POST'])
@@ -94,7 +96,7 @@ def register():
         user.set_password(form.password.data)
         user.save()
         
-        flash('Your account has been created! You can now log in.', 'success')
+        flash('حساب کاربری شما ایجاد شد! اکنون می‌توانید وارد شوید.', 'success')
         return redirect(url_for('login'))
     
     return render_template('register.html', form=form)

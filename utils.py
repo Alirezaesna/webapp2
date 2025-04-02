@@ -1,6 +1,7 @@
 from datetime import datetime, timedelta
 from models import User, Loan, Installment
 from sqlalchemy import func, and_
+import jdatetime
 
 def create_admin_if_not_exists():
     """Create admin user if no admin exists"""
@@ -23,6 +24,20 @@ def create_admin_if_not_exists():
 def format_currency(amount):
     """Format a number as currency"""
     return f"{float(amount):,.2f}"
+
+def to_jalali_date(date):
+    """Convert Gregorian date to Jalali (Shamsi) date"""
+    if date is None:
+        return ""
+    
+    if isinstance(date, datetime):
+        date = date.date()
+        
+    try:
+        j_date = jdatetime.date.fromgregorian(date=date)
+        return j_date.strftime("%Y/%m/%d")
+    except:
+        return str(date)
 
 def create_loan_installments(loan):
     """Create installments for a loan"""
