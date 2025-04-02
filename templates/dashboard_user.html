@@ -162,7 +162,7 @@
                     <div class="list-group list-group-flush">
                         {% for installment in upcoming_installments %}
                             {% set loan = Loan.get_by_id(installment.loan_id) %}
-                            {% set days_remaining = (datetime.strptime(installment.due_date, '%Y-%m-%d').date() - datetime.now().date()).days %}
+                            {% set days_remaining = (installment.due_date - datetime.now().date()).days %}
                             <div class="list-group-item px-0 py-3 border-bottom">
                                 <div class="d-flex justify-content-between align-items-center">
                                     <div>

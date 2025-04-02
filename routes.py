@@ -169,7 +169,7 @@ def admin_dashboard():
     overdue_installments = []
     
     for inst in installments:
-        if not inst.paid and datetime.strptime(inst.due_date, '%Y-%m-%d').date() < today:
+        if not inst.paid and inst.due_date < today:
             loan = Loan.get_by_id(inst.loan_id)
             if loan and loan.status == 'approved':
                 user = User.get_by_id(loan.user_id)
@@ -517,7 +517,7 @@ def admin_installments():
         installments = [inst for inst in installments if not inst.paid]
     elif form.status.data == 'overdue':
         installments = [inst for inst in installments if not inst.paid and 
-                        datetime.strptime(inst.due_date, '%Y-%m-%d').date() < today]
+                        inst.due_date < today]
     
     # Add loan and user information
     installments_with_info = []
@@ -562,9 +562,9 @@ def admin_add_installment():
         installment = Installment(
             loan_id=form.loan_id.data,
             amount=form.amount.data,
-            due_date=form.due_date.data.strftime('%Y-%m-%d'),
+            due_date=form.due_date.data,
             paid=form.paid.data,
-            paid_date=form.paid_date.data.strftime('%Y-%m-%d') if form.paid.data and form.paid_date.data else None
+            paid_date=form.paid_date.data if form.paid.data and form.paid_date.data else None
         )
         installment.save()
         flash('Installment added successfully.', 'success')
@@ -586,11 +586,9 @@ def admin_edit_installment(installment_id):
     
     form = InstallmentForm(obj=installment)
     
-    # Convert string dates to date objects
-    if installment.due_date:
-        form.due_date.data = datetime.strptime(installment.due_date, '%Y-%m-%d').date()
-    if installment.paid_date:
-        form.paid_date.data = datetime.strptime(installment.paid_date, '%Y-%m-%d').date()
+    # Due date and paid date are already date objects
+    form.due_date.data = installment.due_date
+    form.paid_date.data = installment.paid_date
     
     # Populate loan choices
     loans = Loan.get_all()
@@ -606,9 +604,9 @@ def admin_edit_installment(installment_id):
     if form.validate_on_submit():
         installment.loan_id = form.loan_id.data
         installment.amount = form.amount.data
-        installment.due_date = form.due_date.data.strftime('%Y-%m-%d')
+        installment.due_date = form.due_date.data
         installment.paid = form.paid.data
-        installment.paid_date = form.paid_date.data.strftime('%Y-%m-%d') if form.paid.data and form.paid_date.data else None
+        installment.paid_date = form.paid_date.data if form.paid.data and form.paid_date.data else None
         
         installment.save()
         flash('Installment updated successfully.', 'success')
@@ -629,7 +627,7 @@ def admin_pay_installment(installment_id):
         return redirect(url_for('admin_installments'))
     
     installment.paid = True
-    installment.paid_date = datetime.now().strftime('%Y-%m-%d')
+    installment.paid_date = datetime.now().date()
     installment.save()
     
     # Check if all installments are paid for this loan

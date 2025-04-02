@@ -51,7 +51,7 @@
                         {% for item in installments %}
                             {% set days_overdue = 0 %}
                             {% if not item.installment.paid %}
-                                {% set days_overdue = (datetime.now().date() - datetime.strptime(item.installment.due_date, '%Y-%m-%d').date()).days %}
+                                {% set days_overdue = (datetime.now().date() - item.installment.due_date).days %}
                             {% endif %}
                             
                             <tr class="{% if not item.installment.paid and days_overdue > 0 %}table-danger{% elif item.installment.paid %}table-success{% endif %}">

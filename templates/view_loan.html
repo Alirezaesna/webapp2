@@ -232,7 +232,7 @@
                             </thead>
                             <tbody>
                                 {% for installment in installments %}
-                                    {% set days_remaining = (datetime.strptime(installment.due_date, '%Y-%m-%d').date() - datetime.now().date()).days %}
+                                    {% set days_remaining = (installment.due_date - datetime.now().date()).days %}
                                     <tr class="{% if installment.paid %}table-success{% elif days_remaining < 0 %}table-danger{% elif days_remaining <= 7 %}table-warning{% endif %}">
                                         <td>{{ loop.index }}</td>
                                         <td>{{ installment.amount|currency }}</td>
