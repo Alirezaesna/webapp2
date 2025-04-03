@@ -11,6 +11,8 @@ from forms import (LoginForm, RegisterForm, EditProfileForm, ChangePasswordForm,
                   LoanActionForm, InstallmentPaymentForm, InstallmentFilterForm)
 from utils import (create_admin_if_not_exists, format_currency, create_loan_installments,
                   get_loan_progress, get_user_loan_statistics, get_system_statistics, to_jalali_date)
+from excel_export import (export_users_to_excel, export_loans_to_excel, export_installments_to_excel, 
+                         export_user_loans_to_excel, export_loan_installments_to_excel)
 
 # Admin user will be created when the application starts
 # (moved to main.py)
@@ -200,6 +202,21 @@ def admin_users():
     users = User.get_all()
     return render_template('admin_users.html', users=users)
 
+@app.route('/admin/users/export_excel')
+@login_required
+def admin_export_users_excel():
+    if not current_user.is_admin:
+        flash('Access denied: Admin privileges required.', 'danger')
+        return redirect(url_for('user_dashboard'))
+    
+    try:
+        filename = export_users_to_excel()
+        flash(f'گزارش کاربران با موفقیت به اکسل تبدیل شد.', 'success')
+        return redirect(url_for('static', filename=f'exports/{filename}'))
+    except Exception as e:
+        flash(f'خطا در ایجاد فایل اکسل: {str(e)}', 'danger')
+        return redirect(url_for('admin_users'))
+
 @app.route('/admin/users/add', methods=['GET', 'POST'])
 @login_required
 def admin_add_user():
@@ -341,6 +358,28 @@ def admin_loans():
     return render_template('admin_loans.html', 
                           loans=loans_with_users, 
                           status_filter=status_filter)
+
+@app.route('/admin/loans/export_excel')
+@login_required
+def admin_export_loans_excel():
+    if not current_user.is_admin:
+        flash('Access denied: Admin privileges required.', 'danger')
+        return redirect(url_for('user_dashboard'))
+    
+    # Filter loans by status if provided
+    status_filter = request.args.get('status', 'all')
+    
+    loans = Loan.get_all()
+    if status_filter != 'all':
+        loans = [loan for loan in loans if loan.status == status_filter]
+    
+    try:
+        filename = export_loans_to_excel(loans)
+        flash(f'گزارش وام‌ها با موفقیت به اکسل تبدیل شد.', 'success')
+        return redirect(url_for('static', filename=f'exports/{filename}'))
+    except Exception as e:
+        flash(f'خطا در ایجاد فایل اکسل: {str(e)}', 'danger')
+        return redirect(url_for('admin_loans'))
 
 @app.route('/admin/loans/add', methods=['GET', 'POST'])
 @login_required
@@ -540,6 +579,42 @@ def admin_installments():
                           installments=installments_with_info,
                           form=form)
 
+@app.route('/admin/installments/export_excel')
+@login_required
+def admin_export_installments_excel():
+    if not current_user.is_admin:
+        flash('Access denied: Admin privileges required.', 'danger')
+        return redirect(url_for('user_dashboard'))
+    
+    # Get filter status from query parameters
+    status_filter = request.args.get('status', 'all')
+    
+    installments = Installment.get_all()
+    today = datetime.now().date()
+    
+    # Filter by status
+    if status_filter == 'paid':
+        installments = [inst for inst in installments if inst.paid]
+    elif status_filter == 'unpaid':
+        installments = [inst for inst in installments if not inst.paid]
+    elif status_filter == 'overdue':
+        installments = [inst for inst in installments if not inst.paid and inst.due_date < today]
+    
+    # Filter to only include installments for approved loans
+    filtered_installments = []
+    for inst in installments:
+        loan = Loan.get_by_id(inst.loan_id)
+        if loan and loan.status == 'approved':
+            filtered_installments.append(inst)
+    
+    try:
+        filename = export_installments_to_excel(filtered_installments, status_filter)
+        flash(f'گزارش اقساط با موفقیت به اکسل تبدیل شد.', 'success')
+        return redirect(url_for('static', filename=f'exports/{filename}'))
+    except Exception as e:
+        flash(f'خطا در ایجاد فایل اکسل: {str(e)}', 'danger')
+        return redirect(url_for('admin_installments'))
+
 @app.route('/admin/installments/add', methods=['GET', 'POST'])
 @login_required
 def admin_add_installment():
@@ -712,6 +787,20 @@ def my_loans():
     
     return render_template('my_loans.html', loans=loans_with_progress)
 
+@app.route('/my-loans/export_excel')
+@login_required
+def export_my_loans_excel():
+    if current_user.is_admin:
+        return redirect(url_for('admin_export_loans_excel'))
+    
+    try:
+        filename = export_user_loans_to_excel(current_user.id)
+        flash(f'گزارش وام‌های شما با موفقیت به اکسل تبدیل شد.', 'success')
+        return redirect(url_for('static', filename=f'exports/{filename}'))
+    except Exception as e:
+        flash(f'خطا در ایجاد فایل اکسل: {str(e)}', 'danger')
+        return redirect(url_for('my_loans'))
+
 @app.route('/view-loan/<loan_id>')
 @login_required
 def view_loan(loan_id):
@@ -741,6 +830,27 @@ def view_loan(loan_id):
                           progress=progress,
                           installments=installments,
                           is_admin=current_user.is_admin)
+
+@app.route('/view-loan/<loan_id>/export_installments_excel')
+@login_required
+def export_loan_installments_excel(loan_id):
+    loan = Loan.get_by_id(loan_id)
+    if not loan:
+        flash('Loan not found.', 'danger')
+        return redirect(url_for('my_loans'))
+    
+    # Check if the loan belongs to the current user or if user is admin
+    if str(loan.user_id) != str(current_user.id) and not current_user.is_admin:
+        flash('You do not have permission to view this loan.', 'danger')
+        return redirect(url_for('my_loans'))
+    
+    try:
+        filename = export_loan_installments_to_excel(loan_id)
+        flash(f'گزارش اقساط وام با موفقیت به اکسل تبدیل شد.', 'success')
+        return redirect(url_for('static', filename=f'exports/{filename}'))
+    except Exception as e:
+        flash(f'خطا در ایجاد فایل اکسل: {str(e)}', 'danger')
+        return redirect(url_for('view_loan', loan_id=loan_id))
 
 @app.route('/profile', methods=['GET', 'POST'])
 @login_required

@@ -11,6 +11,9 @@
         <p class="text-muted">Loan #{{ loan.id }}</p>
     </div>
     <div class="col-auto d-flex align-items-center">
+        <a href="{{ url_for('export_loan_installments_excel', loan_id=loan.id) }}" class="btn btn-success me-2">
+            <i class="fas fa-file-excel me-2"></i> خروجی اقساط
+        </a>
         {% if is_admin %}
             <a href="{{ url_for('admin_edit_loan', loan_id=loan.id) }}" class="btn btn-outline-primary me-2">
                 <i class="fas fa-edit me-1"></i> Edit Loan
