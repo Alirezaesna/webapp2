@@ -131,4 +131,15 @@
                                     {% endif %}
                                 </td>
                             </tr>
-                            
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div class="alert alert-info mb-0">
+                <i class="fas fa-info-circle me-2"></i> No loans found.
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
