@@ -132,3 +132,16 @@
                                 </td>
                             </tr>
                             
+<!-- Modal removed to fix duplicate confirmation problem -->
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div class="alert alert-info">
+                <i class="fas fa-info-circle me-2"></i> No loans found with the selected filter.
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
