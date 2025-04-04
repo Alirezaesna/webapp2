@@ -106,6 +106,57 @@ def export_database(postgres_backup=True, json_backup=True):
     
     return result
 
+# تابع برای لیست کردن فایل‌های پشتیبان موجود
+def list_backup_files():
+    """
+    لیست کردن فایل‌های پشتیبان موجود
+    
+    Returns:
+        dict: لیست فایل‌های پشتیبان با دسته‌بندی براساس نوع
+    """
+    backup_files = {
+        'json': [],
+        'sql': []
+    }
+    
+    # اطمینان از وجود پوشه data
+    if not os.path.exists('data'):
+        return backup_files
+    
+    # بررسی فایل‌های JSON
+    for file in os.listdir('data'):
+        file_path = os.path.join('data', file)
+        if not os.path.isfile(file_path):
+            continue
+            
+        if file.endswith('.json'):
+            if file in ['users.json', 'loans.json', 'installments.json']:
+                # فایل‌های اصلی پایه
+                continue
+                
+            file_info = {
+                'name': file,
+                'path': file_path,
+                'size': os.path.getsize(file_path),
+                'modified': datetime.fromtimestamp(os.path.getmtime(file_path)).strftime('%Y-%m-%d %H:%M:%S')
+            }
+            backup_files['json'].append(file_info)
+            
+        elif file.endswith('.sql') or file.startswith('pg_backup_'):
+            file_info = {
+                'name': file,
+                'path': file_path,
+                'size': os.path.getsize(file_path),
+                'modified': datetime.fromtimestamp(os.path.getmtime(file_path)).strftime('%Y-%m-%d %H:%M:%S')
+            }
+            backup_files['sql'].append(file_info)
+    
+    # مرتب کردن فایل‌ها بر اساس تاریخ ویرایش (جدیدترین‌ها اول)
+    backup_files['json'] = sorted(backup_files['json'], key=lambda x: x['modified'], reverse=True)
+    backup_files['sql'] = sorted(backup_files['sql'], key=lambda x: x['modified'], reverse=True)
+    
+    return backup_files
+
 # اجرای اسکریپت در context برنامه
 if __name__ == "__main__":
     with app.app_context():

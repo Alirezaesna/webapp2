@@ -1,4 +1,5 @@
 from flask_wtf import FlaskForm
+from flask_wtf.file import FileField, FileAllowed, FileRequired
 from wtforms import StringField, PasswordField, BooleanField, SubmitField, TextAreaField, SelectField, FloatField, IntegerField, DateField, HiddenField
 from wtforms.validators import DataRequired, Email, EqualTo, Length, ValidationError, Optional, NumberRange
 from models import User
@@ -99,3 +100,19 @@ class InstallmentFilterForm(FlaskForm):
         ('overdue', 'اقساط معوق')
     ])
     submit = SubmitField('فیلتر')
+
+class DatabaseBackupForm(FlaskForm):
+    backup_type = SelectField('نوع پشتیبان‌گیری', choices=[
+        ('json', 'JSON (همه داده‌ها)'),
+        ('sql', 'SQL (پایگاه داده کامل)'),
+        ('both', 'هر دو فرمت')
+    ], default='both')
+    submit = SubmitField('ایجاد نسخه پشتیبان')
+
+class DatabaseRestoreForm(FlaskForm):
+    backup_file = FileField('فایل پشتیبان', validators=[
+        FileRequired('لطفا یک فایل انتخاب کنید'),
+        FileAllowed(['json', 'sql'], 'فقط فایل‌های JSON یا SQL پشتیبانی می‌شوند')
+    ])
+    clear_existing = BooleanField('پاک کردن داده‌های موجود قبل از بازیابی')
+    submit = SubmitField('بازیابی پایگاه داده')

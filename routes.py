@@ -1,18 +1,23 @@
-from flask import render_template, redirect, url_for, flash, request, jsonify, abort
+from flask import render_template, redirect, url_for, flash, request, jsonify, abort, send_file
 from flask_login import login_user, logout_user, login_required, current_user
 from werkzeug.security import check_password_hash
+from werkzeug.utils import secure_filename
 from datetime import datetime
 import os
+from io import BytesIO
 
 from app import app, login_manager
 from models import User, Loan, Installment
 from forms import (LoginForm, RegisterForm, EditProfileForm, ChangePasswordForm, 
                   LoanApplicationForm, LoanForm, InstallmentForm, UserForm,
-                  LoanActionForm, InstallmentPaymentForm, InstallmentFilterForm)
+                  LoanActionForm, InstallmentPaymentForm, InstallmentFilterForm,
+                  DatabaseBackupForm, DatabaseRestoreForm)
 from utils import (create_admin_if_not_exists, format_currency, create_loan_installments,
                   get_loan_progress, get_user_loan_statistics, get_system_statistics, to_jalali_date)
 from excel_export import (export_users_to_excel, export_loans_to_excel, export_installments_to_excel, 
                          export_user_loans_to_excel, export_loan_installments_to_excel)
+from export_db import export_database, list_backup_files
+from import_db import import_database, save_uploaded_file, ensure_database_tables
 
 # Admin user will be created when the application starts
 # (moved to main.py)
@@ -890,6 +895,135 @@ def change_password():
             return redirect(url_for('profile'))
     
     return render_template('change_password.html', form=form)
+
+@app.route('/admin/database')
+@login_required
+def admin_database_management():
+    """پنل مدیریت پشتیبان‌گیری و بازیابی پایگاه داده"""
+    if not current_user.is_admin:
+        flash('Access denied: Admin privileges required.', 'danger')
+        return redirect(url_for('user_dashboard'))
+    
+    # فرم‌های مورد نیاز
+    backup_form = DatabaseBackupForm()
+    restore_form = DatabaseRestoreForm()
+    
+    # لیست فایل‌های پشتیبان موجود
+    backup_files = list_backup_files()
+    
+    # آمار پایگاه داده
+    from pg_db_utils import get_db_statistics
+    db_stats = get_db_statistics()
+    
+    # اطمینان از وجود جداول پایگاه داده
+    ensure_database_tables()
+    
+    return render_template('admin_database.html',
+                          backup_form=backup_form,
+                          restore_form=restore_form,
+                          backup_files=backup_files,
+                          db_stats=db_stats)
+
+@app.route('/admin/database/backup', methods=['POST'])
+@login_required
+def admin_database_backup():
+    """ایجاد نسخه پشتیبان از پایگاه داده"""
+    if not current_user.is_admin:
+        flash('Access denied: Admin privileges required.', 'danger')
+        return redirect(url_for('user_dashboard'))
+    
+    form = DatabaseBackupForm()
+    if form.validate_on_submit():
+        try:
+            backup_type = form.backup_type.data
+            
+            if backup_type == 'json':
+                # فقط پشتیبان JSON
+                result = export_database(postgres_backup=False, json_backup=True)
+            elif backup_type == 'sql':
+                # فقط پشتیبان SQL
+                result = export_database(postgres_backup=True, json_backup=False)
+            else:
+                # هر دو نوع پشتیبان
+                result = export_database(postgres_backup=True, json_backup=True)
+            
+            if result['status'] == 'success':
+                flash('نسخه پشتیبان با موفقیت ایجاد شد.', 'success')
+            else:
+                flash('نسخه پشتیبان با مشکلاتی ایجاد شد. لطفا لاگ‌ها را بررسی کنید.', 'warning')
+        except Exception as e:
+            flash(f'خطا در ایجاد نسخه پشتیبان: {str(e)}', 'danger')
+    else:
+        for field, errors in form.errors.items():
+            for error in errors:
+                flash(f"خطا در فیلد {getattr(form, field).label.text}: {error}", 'danger')
+    
+    return redirect(url_for('admin_database_management'))
+
+@app.route('/admin/database/restore', methods=['POST'])
+@login_required
+def admin_database_restore():
+    """بازیابی پایگاه داده از فایل پشتیبان"""
+    if not current_user.is_admin:
+        flash('Access denied: Admin privileges required.', 'danger')
+        return redirect(url_for('user_dashboard'))
+    
+    form = DatabaseRestoreForm()
+    if form.validate_on_submit():
+        try:
+            # ذخیره فایل آپلود شده
+            uploaded_file = form.backup_file.data
+            clear_existing = form.clear_existing.data
+            
+            # تعیین نوع فایل
+            is_sql = uploaded_file.filename.lower().endswith('.sql')
+            
+            # ذخیره فایل
+            file_path = save_uploaded_file(uploaded_file)
+            
+            # بازیابی پایگاه داده
+            if is_sql:
+                # بازیابی از فایل SQL
+                result = import_database(clear_existing=clear_existing, sql_backup_file=file_path)
+            else:
+                # بازیابی از فایل JSON
+                result = import_database(clear_existing=clear_existing)
+            
+            if result['status'] == 'success':
+                flash('پایگاه داده با موفقیت بازیابی شد.', 'success')
+            else:
+                flash('پایگاه داده با مشکلاتی بازیابی شد. لطفا لاگ‌ها را بررسی کنید.', 'warning')
+        except Exception as e:
+            flash(f'خطا در بازیابی پایگاه داده: {str(e)}', 'danger')
+    else:
+        for field, errors in form.errors.items():
+            for error in errors:
+                flash(f"خطا در فیلد {getattr(form, field).label.text}: {error}", 'danger')
+    
+    return redirect(url_for('admin_database_management'))
+
+@app.route('/admin/database/download/<path:filename>')
+@login_required
+def admin_database_download(filename):
+    """دانلود فایل پشتیبان"""
+    if not current_user.is_admin:
+        flash('Access denied: Admin privileges required.', 'danger')
+        return redirect(url_for('user_dashboard'))
+    
+    try:
+        # تعیین مسیر فایل
+        file_path = os.path.join('data', secure_filename(filename))
+        
+        # بررسی وجود فایل
+        if not os.path.exists(file_path):
+            flash('فایل مورد نظر یافت نشد.', 'danger')
+            return redirect(url_for('admin_database_management'))
+        
+        # دانلود فایل
+        return send_file(file_path, as_attachment=True)
+    except Exception as e:
+        flash(f'خطا در دانلود فایل: {str(e)}', 'danger')
+        return redirect(url_for('admin_database_management'))
 
 @app.route('/reports')
 @login_required

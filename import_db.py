@@ -168,9 +168,76 @@ def import_database(clear_existing=False, sql_backup_file=None):
     logging.info(f"Database import completed: {result['users']} users, {result['loans']} loans, {result['installments']} installments")
     return result
 
+# تابع برای ذخیره فایل آپلود شده
+def save_uploaded_file(uploaded_file, filename=None):
+    """
+    ذخیره فایل آپلود شده در سیستم
+    
+    Args:
+        uploaded_file: فایل آپلود شده (از فایل درخواست)
+        filename (str, optional): نام فایل برای ذخیره. اگر مشخص نشود، نام اصلی فایل استفاده می‌شود.
+        
+    Returns:
+        str: مسیر فایل ذخیره شده
+    """
+    # اطمینان از وجود پوشه data
+    os.makedirs('data', exist_ok=True)
+    
+    # تعیین نام فایل
+    if filename is None:
+        filename = uploaded_file.filename
+    
+    # اطمینان از امنیت نام فایل
+    from werkzeug.utils import secure_filename
+    filename = secure_filename(filename)
+    
+    # تعیین مسیر فایل
+    file_path = os.path.join('data', filename)
+    
+    # ذخیره فایل
+    uploaded_file.save(file_path)
+    
+    return file_path
+
+# تابع برای بررسی و اطمینان از ایجاد جداول پایگاه داده
+def ensure_database_tables():
+    """
+    بررسی و اطمینان از ایجاد جداول پایگاه داده
+    
+    Returns:
+        bool: True اگر عملیات موفقیت‌آمیز بود، False در غیر این صورت
+    """
+    try:
+        # بررسی وجود جداول
+        inspector = db.inspect(db.engine)
+        existing_tables = inspector.get_table_names()
+        required_tables = ['users', 'loans', 'installments']
+        
+        # اگر همه جداول مورد نیاز وجود دارند، کاری نکن
+        if all(table in existing_tables for table in required_tables):
+            logging.info("All required database tables exist.")
+            return True
+        
+        # ایجاد جداول مورد نیاز
+        logging.info("Creating database tables...")
+        db.create_all()
+        
+        # ایجاد حساب مدیر پیش‌فرض اگر وجود نداشته باشد
+        from utils import create_admin_if_not_exists
+        create_admin_if_not_exists()
+        
+        logging.info("Database tables created successfully.")
+        return True
+    except Exception as e:
+        logging.error(f"Error ensuring database tables: {str(e)}")
+        return False
+
 # اجرای اسکریپت اگر به صورت مستقیم فراخوانی شود
 if __name__ == "__main__":
     with app.app_context():
+        # اطمینان از وجود جداول پایگاه داده
+        ensure_database_tables()
+        
         # می‌توان مسیر فایل پشتیبان SQL را نیز مشخص کرد
         # result = import_database(clear_existing=False, sql_backup_file='data/pg_backup_YYYYMMDD_HHMMSS.sql')
         result = import_database(clear_existing=False)

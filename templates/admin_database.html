@@ -1,0 +1,174 @@
+{% extends "layout.html" %}
+
+{% block title %}مدیریت پایگاه داده | سیستم وام قرض‌الحسنه{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1 class="mb-4">مدیریت پایگاه داده</h1>
+    
+    <div class="row">
+        <!-- بخش نسخه پشتیبان -->
+        <div class="col-md-6">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">ایجاد نسخه پشتیبان</h5>
+                </div>
+                <div class="card-body">
+                    <form method="post" action="{{ url_for('admin_database_backup') }}">
+                        {{ backup_form.hidden_tag() }}
+                        <div class="mb-3">
+                            {{ backup_form.backup_type.label(class="form-label") }}
+                            {{ backup_form.backup_type(class="form-select") }}
+                            <div class="form-text">نوع پشتیبان‌گیری را انتخاب کنید</div>
+                        </div>
+                        <div class="d-grid">
+                            {{ backup_form.submit(class="btn btn-primary") }}
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        
+        <!-- بخش بازیابی از پشتیبان -->
+        <div class="col-md-6">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">بازیابی از نسخه پشتیبان</h5>
+                </div>
+                <div class="card-body">
+                    <form method="post" action="{{ url_for('admin_database_restore') }}" enctype="multipart/form-data">
+                        {{ restore_form.hidden_tag() }}
+                        <div class="mb-3">
+                            {{ restore_form.backup_file.label(class="form-label") }}
+                            {{ restore_form.backup_file(class="form-control") }}
+                            <div class="form-text">فایل پشتیبان SQL یا JSON را انتخاب کنید</div>
+                            {% if restore_form.backup_file.errors %}
+                                <div class="alert alert-danger mt-2">
+                                    {% for error in restore_form.backup_file.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        <div class="mb-3 form-check">
+                            {{ restore_form.clear_existing(class="form-check-input") }}
+                            {{ restore_form.clear_existing.label(class="form-check-label") }}
+                            <div class="form-text text-danger">احتیاط: این گزینه تمام داده‌های موجود را پاک می‌کند!</div>
+                        </div>
+                        <div class="d-grid">
+                            {{ restore_form.submit(class="btn btn-warning") }}
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- بخش فایل‌های پشتیبان موجود -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card mb-4">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">فایل‌های پشتیبان موجود</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <!-- فایل‌های SQL -->
+                        <div class="col-md-6">
+                            <h6 class="border-bottom pb-2 mb-3">پشتیبان‌های SQL</h6>
+                            {% if backup_files['sql']|length > 0 %}
+                                <div class="list-group">
+                                    {% for file in backup_files['sql'] %}
+                                        <div class="list-group-item list-group-item-action">
+                                            <div class="d-flex w-100 justify-content-between">
+                                                <h6 class="mb-1">{{ file.name }}</h6>
+                                                <a href="{{ url_for('admin_database_download', filename=file.name) }}" class="btn btn-sm btn-outline-primary">دانلود</a>
+                                            </div>
+                                            <p class="mb-1">اندازه: {{ (file.size / 1024)|round(1) }} کیلوبایت</p>
+                                            <small>تاریخ: {{ file.modified }}</small>
+                                        </div>
+                                    {% endfor %}
+                                </div>
+                            {% else %}
+                                <div class="alert alert-info">هیچ فایل پشتیبان SQL موجود نیست.</div>
+                            {% endif %}
+                        </div>
+                        
+                        <!-- فایل‌های JSON -->
+                        <div class="col-md-6">
+                            <h6 class="border-bottom pb-2 mb-3">پشتیبان‌های JSON</h6>
+                            {% if backup_files['json']|length > 0 %}
+                                <div class="list-group">
+                                    {% for file in backup_files['json'] %}
+                                        <div class="list-group-item list-group-item-action">
+                                            <div class="d-flex w-100 justify-content-between">
+                                                <h6 class="mb-1">{{ file.name }}</h6>
+                                                <a href="{{ url_for('admin_database_download', filename=file.name) }}" class="btn btn-sm btn-outline-primary">دانلود</a>
+                                            </div>
+                                            <p class="mb-1">اندازه: {{ (file.size / 1024)|round(1) }} کیلوبایت</p>
+                                            <small>تاریخ: {{ file.modified }}</small>
+                                        </div>
+                                    {% endfor %}
+                                </div>
+                            {% else %}
+                                <div class="alert alert-info">هیچ فایل پشتیبان JSON موجود نیست.</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- بخش آمار پایگاه داده -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">آمار پایگاه داده</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6 class="border-bottom pb-2 mb-3">جداول</h6>
+                            <div class="table-responsive">
+                                <table class="table table-striped table-hover">
+                                    <thead>
+                                        <tr>
+                                            <th>نام جدول</th>
+                                            <th>تعداد رکوردها</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for table_name, row_count in db_stats['tables'].items() %}
+                                            <tr>
+                                                <td>{{ table_name }}</td>
+                                                <td>{{ row_count }}</td>
+                                            </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <h6 class="border-bottom pb-2 mb-3">آمار کلی</h6>
+                            <div class="alert alert-info">
+                                <p class="mb-1">مجموع تعداد رکوردها: {{ db_stats['total_rows'] }}</p>
+                                <p class="mb-1">تعداد جداول: {{ db_stats['tables']|length }}</p>
+                            </div>
+                            
+                            <div class="alert alert-secondary mt-3">
+                                <p class="mb-0">از این صفحه می‌توانید عملیات پشتیبان‌گیری و بازیابی پایگاه داده را انجام دهید.</p>
+                                <ul class="mt-2 mb-0">
+                                    <li>پشتیبان‌های JSON معمولاً برای بازیابی سریع و انتقال از یک سیستم به سیستم دیگر مناسب‌تر هستند.</li>
+                                    <li>پشتیبان‌های SQL برای بازیابی کامل ساختار پایگاه داده با تمامی جزئیات مناسب‌تر هستند.</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
