@@ -1,102 +1,180 @@
 import json
 import os
+import logging
 from datetime import datetime, date
 from app import app, db
 from models import User, Loan, Installment
 from sqlalchemy.exc import IntegrityError
+from pg_db_utils import restore_database
+
+# تنظیم لاگینگ
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 # تابع تبدیل داده‌های JSON به مدل‌های SQLAlchemy
 def deserialize_model(model_class, data):
+    """
+    تبدیل داده‌های دریافتی از JSON به مدل SQLAlchemy
+    
+    Args:
+        model_class: کلاس مدل SQLAlchemy
+        data: دیکشنری داده‌ها از JSON
+        
+    Returns:
+        instance: نمونه ایجاد شده از مدل
+    """
+    # کپی از داده‌ها برای جلوگیری از تغییر در دیکشنری اصلی
+    data_copy = data.copy()
+    
     # حذف کلید id برای جلوگیری از تداخل با کلیدهای خودکار
-    if 'id' in data:
-        del data['id']
+    if 'id' in data_copy:
+        original_id = data_copy['id']
+        del data_copy['id']
+    else:
+        original_id = None
     
     # تبدیل فیلدهای تاریخ و زمان
-    for key, value in list(data.items()):
+    for key, value in list(data_copy.items()):
         if isinstance(value, str) and ('_at' in key or key == 'due_date' or key == 'paid_date'):
             if value is not None:
                 try:
                     if 'T' in value:  # تاریخ و زمان ISO format
-                        data[key] = datetime.fromisoformat(value)
+                        data_copy[key] = datetime.fromisoformat(value)
                     else:  # فقط تاریخ
-                        data[key] = date.fromisoformat(value)
+                        data_copy[key] = date.fromisoformat(value)
                 except ValueError:
-                    print(f"Cannot convert {key}: {value} to date/datetime")
+                    logging.warning(f"Cannot convert {key}: {value} to date/datetime")
     
     # ایجاد نمونه مدل با داده‌های JSON
-    instance = model_class(**data)
+    instance = model_class(**data_copy)
+    
+    # برگرداندن id اصلی
+    if original_id is not None:
+        instance.id = original_id
+        
     return instance
 
 # تابع اصلی برای وارد کردن داده‌ها
-def import_database(clear_existing=False):
-    if clear_existing:
-        print("Clearing existing data...")
-        db.session.query(Installment).delete()
-        db.session.query(Loan).delete()
-        db.session.query(User).delete()
-        db.session.commit()
+def import_database(clear_existing=False, sql_backup_file=None):
+    """
+    وارد کردن داده‌ها به پایگاه داده
     
-    # وارد کردن کاربران
+    Args:
+        clear_existing (bool): آیا داده‌های موجود پاک شوند
+        sql_backup_file (str): مسیر فایل پشتیبان SQL برای بازیابی
+        
+    Returns:
+        dict: آمار داده‌های وارد شده
+    """
+    result = {
+        'status': 'success',
+        'users': 0,
+        'loans': 0,
+        'installments': 0,
+        'sql_restore': None
+    }
+    
+    # بازیابی از فایل SQL اگر مشخص شده باشد
+    if sql_backup_file and os.path.exists(sql_backup_file):
+        try:
+            logging.info(f"Restoring database from SQL backup: {sql_backup_file}")
+            restore_success = restore_database(sql_backup_file)
+            result['sql_restore'] = {
+                'file': sql_backup_file,
+                'success': restore_success
+            }
+            
+            if restore_success:
+                logging.info("SQL database restore completed successfully")
+                # اگر بازیابی SQL موفق بود، نیازی به وارد کردن JSON نیست
+                return result
+            else:
+                logging.warning("SQL database restore failed, falling back to JSON import")
+        except Exception as e:
+            logging.error(f"Error restoring database from SQL: {str(e)}")
+            result['status'] = 'partial'
+            result['sql_restore_error'] = str(e)
+    
+    # پاک کردن داده‌های موجود
+    if clear_existing:
+        try:
+            logging.info("Clearing existing data...")
+            db.session.query(Installment).delete()
+            db.session.query(Loan).delete()
+            db.session.query(User).delete()
+            db.session.commit()
+        except Exception as e:
+            logging.error(f"Error clearing existing data: {str(e)}")
+            db.session.rollback()
+            result['status'] = 'partial'
+            result['clear_error'] = str(e)
+    
+    # وارد کردن کاربران از JSON
     if os.path.exists('data/users.json'):
         with open('data/users.json', 'r', encoding='utf-8') as f:
             users_data = json.load(f)
         
         for user_data in users_data:
-            # ذخیره id اصلی برای استفاده بعدی
-            original_id = user_data['id']
-            
-            user = deserialize_model(User, user_data)
-            user.id = original_id  # تنظیم id به مقدار اصلی
-            
             try:
+                user = deserialize_model(User, user_data)
                 db.session.merge(user)  # از merge استفاده می‌کنیم تا در صورت وجود آپدیت شود
                 db.session.commit()
-                print(f"Imported user: {user.username} (ID: {user.id})")
+                result['users'] += 1
+                logging.info(f"Imported user: {user.username} (ID: {user.id})")
             except IntegrityError as e:
                 db.session.rollback()
-                print(f"Error importing user {user.username}: {str(e)}")
+                logging.error(f"Error importing user {user_data.get('username')}: {str(e)}")
+            except Exception as e:
+                db.session.rollback()
+                logging.error(f"Unexpected error importing user {user_data.get('username')}: {str(e)}")
     
-    # وارد کردن وام‌ها
+    # وارد کردن وام‌ها از JSON
     if os.path.exists('data/loans.json'):
         with open('data/loans.json', 'r', encoding='utf-8') as f:
             loans_data = json.load(f)
         
         for loan_data in loans_data:
-            original_id = loan_data['id']
-            
-            loan = deserialize_model(Loan, loan_data)
-            loan.id = original_id
-            
             try:
+                loan = deserialize_model(Loan, loan_data)
                 db.session.merge(loan)
                 db.session.commit()
-                print(f"Imported loan ID: {loan.id} (User ID: {loan.user_id})")
+                result['loans'] += 1
+                logging.info(f"Imported loan ID: {loan.id} (User ID: {loan.user_id})")
             except IntegrityError as e:
                 db.session.rollback()
-                print(f"Error importing loan {loan.id}: {str(e)}")
+                logging.error(f"Error importing loan {loan_data.get('id')}: {str(e)}")
+            except Exception as e:
+                db.session.rollback()
+                logging.error(f"Unexpected error importing loan {loan_data.get('id')}: {str(e)}")
     
-    # وارد کردن اقساط
+    # وارد کردن اقساط از JSON
     if os.path.exists('data/installments.json'):
         with open('data/installments.json', 'r', encoding='utf-8') as f:
             installments_data = json.load(f)
         
         for inst_data in installments_data:
-            original_id = inst_data['id']
-            
-            installment = deserialize_model(Installment, inst_data)
-            installment.id = original_id
-            
             try:
+                installment = deserialize_model(Installment, inst_data)
                 db.session.merge(installment)
                 db.session.commit()
-                print(f"Imported installment ID: {installment.id} (Loan ID: {installment.loan_id})")
+                result['installments'] += 1
+                logging.info(f"Imported installment ID: {installment.id} (Loan ID: {installment.loan_id})")
             except IntegrityError as e:
                 db.session.rollback()
-                print(f"Error importing installment {installment.id}: {str(e)}")
+                logging.error(f"Error importing installment {inst_data.get('id')}: {str(e)}")
+            except Exception as e:
+                db.session.rollback()
+                logging.error(f"Unexpected error importing installment {inst_data.get('id')}: {str(e)}")
     
-    print("Database import completed.")
+    logging.info(f"Database import completed: {result['users']} users, {result['loans']} loans, {result['installments']} installments")
+    return result
 
-# اجرای اسکریپت با پارامتر clear_existing=False برای حفظ داده‌های موجود
-# اگر می‌خواهید قبل از وارد کردن داده‌ها، داده‌های موجود پاک شوند، از clear_existing=True استفاده کنید
-with app.app_context():
-    import_database(clear_existing=False)
+# اجرای اسکریپت اگر به صورت مستقیم فراخوانی شود
+if __name__ == "__main__":
+    with app.app_context():
+        # می‌توان مسیر فایل پشتیبان SQL را نیز مشخص کرد
+        # result = import_database(clear_existing=False, sql_backup_file='data/pg_backup_YYYYMMDD_HHMMSS.sql')
+        result = import_database(clear_existing=False)
+        
+        print("Import result:")
+        print(f"Status: {result['status']}")
+        print(f"Imported: {result['users']} users, {result['loans']} loans, {result['installments']} installments")
